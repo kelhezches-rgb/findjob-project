@@ -1,0 +1,19 @@
+cd /d "D:\FindJob Project\frontend"
+npm run dev
+
+cd /d "D:\FindJob Project\backend"
+npx ts-node prisma/seed.ts
+npm run dev
+
+id+pass
+1.Admin user
+admin@jobboard.com
+Admin@1234
+
+2.Demo employer บริษัท
+employer@demo.com
+Demo@1234
+
+3.Demo seeker คนหางาน
+seeker@demo.com
+Demo@1234

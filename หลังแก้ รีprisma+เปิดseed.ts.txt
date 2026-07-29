@@ -1,0 +1,68 @@
+เปิดไฟล์:
+
+D:\FindJob Project\backend\prisma\schema.prisma
+
+แก้ส่วนนี้:
+
+enum UserRole        { seeker employer admin }
+enum JobType         { full_time part_time contract internship remote }
+enum JobStatus       { draft active closed expired }
+enum ApplyStatus     { pending reviewed shortlisted rejected hired }
+enum ExperienceLevel { entry mid senior lead executive }
+
+เป็นแบบนี้:
+
+enum UserRole {
+  seeker
+  employer
+  admin
+}
+
+enum JobType {
+  full_time
+  part_time
+  contract
+  internship
+  remote
+}
+
+enum JobStatus {
+  draft
+  active
+  closed
+  expired
+}
+
+enum ApplyStatus {
+  pending
+  reviewed
+  shortlisted
+  rejected
+  hired
+}
+
+enum ExperienceLevel {
+  entry
+  mid
+  senior
+  lead
+  executive
+}
+
+จากนั้นบันทึกไฟล์ แล้วรันใหม่ตามลำดับ:
+
+cd /d "D:\FindJob Project\backend"
+
+npx prisma format
+npx prisma generate
+npx prisma db push
+npx ts-node prisma/seed.ts
+npm run dev
+
+เมื่อผ่านจริงควรเห็น:
+
+Generated Prisma Client
+Your database is now in sync with your Prisma schema.
+✅ Admin user seeded
+✅ Demo employer seeded
+✅ Demo seeker seeded
