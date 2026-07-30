@@ -50,9 +50,15 @@ export default function RegisterPage() {
   const strengthColors = ['', 'bg-red-400', 'bg-orange-400', 'bg-amber-400', 'bg-lime-500', 'bg-green-500']
   const strengthLabels = ['', 'อ่อนมาก', 'อ่อน', 'ปานกลาง', 'แข็งแรง', 'แข็งแรงมาก']
 
-  const onSubmit = async ({ confirmPassword, ...values }: FormValues) => {
+  const onSubmit = async ({ confirmPassword, role, email, password, firstName, lastName, companyName }: FormValues) => {
     setServerError(null)
-    const result = await registerUser(values as Record<string, string>)
+    // React Hook Form retains values from fields that are conditionally hidden.
+    // Only send fields that belong to the selected role; otherwise an employer
+    // registration includes empty first/last names and fails backend validation.
+    const input = role === 'seeker'
+      ? { role, email, password, firstName: firstName || '', lastName: lastName || '' }
+      : { role, email, password, companyName: companyName || '' }
+    const result = await registerUser(input)
     if (!result.success) setServerError(result.message)
   }
 

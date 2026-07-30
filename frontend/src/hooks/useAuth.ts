@@ -6,6 +6,15 @@ import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { User } from '@/types'
 
+type RegistrationInput = {
+  role: 'seeker' | 'employer'
+  email: string
+  password: string
+  firstName?: string
+  lastName?: string
+  companyName?: string
+}
+
 export function useAuth() {
   const router = useRouter()
   const { user, accessToken, isLoading, setAuth, clearAuth, setLoading } = useAuthStore()
@@ -38,7 +47,7 @@ export function useAuth() {
     }
   }, [router, setAuth])
 
-  const register = useCallback(async (input: Record<string, string>) => {
+  const register = useCallback(async (input: RegistrationInput) => {
     try {
       const { data } = await api.post<{ user: User; accessToken: string }>('/auth/register', input)
       setAuth(data.user, data.accessToken)
