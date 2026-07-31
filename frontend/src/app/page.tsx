@@ -7,6 +7,7 @@ import { LatestJobs } from '@/components/home/LatestJobs'
 import { CommunitySection } from '@/components/home/CommunitySection'
 import { CTABanner } from '@/components/home/CTABanner'
 import { HomeFooter } from '@/components/home/HomeFooter'
+import { BackToTop } from '@/components/home/BackToTop'
 
 // Public marketing homepage. All content below is mock data — no API
 // calls — per the Home-page redesign requirements. Auth-aware behavior
@@ -24,6 +25,7 @@ export default function HomePage() {
       <CommunitySection />
       <CTABanner />
       <HomeFooter />
+      <BackToTop />
     </div>
   )
 }

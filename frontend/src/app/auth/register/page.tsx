@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/hooks/useAuth'
 import { Input, Button } from '@/components/ui'
+import { Logo } from '@/components/brand/Logo'
 
 const schema = z.object({
   role:        z.enum(['seeker', 'employer']),
@@ -50,15 +51,9 @@ export default function RegisterPage() {
   const strengthColors = ['', 'bg-red-400', 'bg-orange-400', 'bg-amber-400', 'bg-lime-500', 'bg-green-500']
   const strengthLabels = ['', 'อ่อนมาก', 'อ่อน', 'ปานกลาง', 'แข็งแรง', 'แข็งแรงมาก']
 
-  const onSubmit = async ({ confirmPassword, role, email, password, firstName, lastName, companyName }: FormValues) => {
+  const onSubmit = async ({ confirmPassword, ...values }: FormValues) => {
     setServerError(null)
-    // React Hook Form retains values from fields that are conditionally hidden.
-    // Only send fields that belong to the selected role; otherwise an employer
-    // registration includes empty first/last names and fails backend validation.
-    const input = role === 'seeker'
-      ? { role, email, password, firstName: firstName || '', lastName: lastName || '' }
-      : { role, email, password, companyName: companyName || '' }
-    const result = await registerUser(input)
+    const result = await registerUser(values as Record<string, string>)
     if (!result.success) setServerError(result.message)
   }
 
@@ -66,7 +61,7 @@ export default function RegisterPage() {
     <main id="main-content" className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link href="/" className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-xl font-bold text-white">J</Link>
+          <Logo variant="lockup" href="/" className="mx-auto mb-4" imgClassName="h-12" priority />
           <h1 className="text-2xl font-bold text-gray-900">สมัครสมาชิก</h1>
           <p className="mt-1 text-sm text-gray-500">เริ่มต้นค้นหางาน หรือประกาศรับสมัครงานวันนี้</p>
         </div>

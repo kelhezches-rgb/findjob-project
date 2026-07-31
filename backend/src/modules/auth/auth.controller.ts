@@ -4,7 +4,11 @@ import { AuthRequest } from '../../types'
 
 const COOKIE = {
   httpOnly: true, secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const, maxAge: 7 * 24 * 60 * 60 * 1000, path: '/api/auth',
+  // 'lax' cannot be sent on cross-site XHR/fetch (e.g. Vercel → Render).
+  // Only 'none' works there, and 'none' requires Secure — safe here since
+  // 'secure' is already tied to the same production check.
+  sameSite: process.env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
+  maxAge: 7 * 24 * 60 * 60 * 1000, path: '/api/auth',
 }
 
 export const register = async (req: Request, res: Response) => {
@@ -24,7 +28,7 @@ export const login = async (req: Request, res: Response) => {
 }
 
 export const logout = (_req: Request, res: Response) => {
-  res.clearCookie('refreshToken', { path: '/api/auth' })
+  res.clearCookie('refreshToken', { path: '/api/auth', secure: COOKIE.secure, sameSite: COOKIE.sameSite })
   res.status(200).json({ message: 'Logged out' })
 }
 

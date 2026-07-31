@@ -72,6 +72,11 @@ export const jobQuerySchema = z.object({
   q:               z.string().optional(),
   location:        z.string().optional(),
   province:        z.string().optional(),
+  // No dedicated district/subDistrict columns on Job (see job.service.ts
+  // searchJobs for the reasoning) — these are matched against the existing
+  // free-text `location` field as a best-effort refinement.
+  district:        z.string().optional(),
+  subDistrict:     z.string().optional(),
   jobType:         z.enum(['full_time', 'part_time', 'contract', 'internship', 'remote']).optional(),
   experienceLevel: z.enum(['entry', 'mid', 'senior', 'lead', 'executive']).optional(),
   categoryId:      z.string().uuid().optional(),

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Facebook, Users, Youtube, Linkedin, Instagram } from 'lucide-react'
+import { Logo } from '@/components/brand/Logo'
 
 const FOOTER_COLUMNS = [
   {
@@ -32,10 +33,9 @@ export function HomeFooter() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 grid grid-cols-2 gap-8 md:grid-cols-5">
           <div className="col-span-2 md:col-span-1">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4F46E5] text-sm font-bold text-white">J</div>
+            <Logo variant="icon" href="/" className="mb-3 gap-2">
               <span className="text-lg font-bold text-white">JobBoard</span>
-            </div>
+            </Logo>
             <p className="text-xs leading-relaxed">แพลตฟอร์มหางานและสรรหาบุคลากรชั้นนำของไทย</p>
           </div>
 

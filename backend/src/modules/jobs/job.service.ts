@@ -17,7 +17,19 @@ const SORT_OPTIONS: Record<string, Prisma.JobOrderByWithRelationInput[]> = {
 export const searchJobs = async (q: any) => {
   const where: Prisma.JobWhereInput = {
     ...activeWhere(),
-    ...(q.province   && { province:  { contains: q.province, mode: 'insensitive' } }),
+    ...(q.province && { province: { contains: q.province, mode: 'insensitive' } }),
+    // Job has no dedicated district/subDistrict columns (see jobQuerySchema
+    // comment) — reuse the existing free-text `location` field. This is a
+    // best-effort refinement, not a strict match: it only narrows results
+    // whose location text happens to mention that area. A future schema
+    // change (adding district/subDistrict columns to Job, populated from
+    // the same 77-province dataset) would make this exact instead.
+    ...((q.district || q.subDistrict) && {
+      AND: [
+        ...(q.district    ? [{ location: { contains: q.district,    mode: 'insensitive' as const } }] : []),
+        ...(q.subDistrict ? [{ location: { contains: q.subDistrict, mode: 'insensitive' as const } }] : []),
+      ],
+    }),
     ...(q.jobType    && { jobType:   q.jobType }),
     ...(q.categoryId && { categoryId: q.categoryId }),
     ...(q.isRemote !== undefined && { isRemote: q.isRemote }),

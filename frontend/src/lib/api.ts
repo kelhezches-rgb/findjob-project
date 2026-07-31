@@ -38,10 +38,17 @@ api.interceptors.response.use(
       queue.forEach((r) => r())
       queue = []
       return api(orig)
-    } catch {
-      useAuthStore.getState().clearAuth()
+    } catch (refreshError) {
       queue = []
-      if (typeof window !== 'undefined') window.location.href = '/login'
+      // Only a confirmed response (401/403 = refresh token explicitly
+      // rejected) means the session is actually invalid — clear it and
+      // send the user to log in again. A network-level failure with no
+      // response (offline, CORS, timeout) is ambiguous; don't wipe a
+      // possibly-still-valid session over that.
+      if (axios.isAxiosError(refreshError) && refreshError.response) {
+        useAuthStore.getState().clearAuth()
+        if (typeof window !== 'undefined') window.location.href = '/auth/login'
+      }
       return Promise.reject(error)
     } finally {
       refreshing = false

@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/hooks/useAuth'
 import { Input, Button } from '@/components/ui'
+import { Logo } from '@/components/brand/Logo'
 
 const schema = z.object({
   email:    z.string().email('รูปแบบอีเมลไม่ถูกต้อง'),
@@ -30,7 +31,7 @@ export default function LoginPage() {
     <main id="main-content" className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Link href="/" className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-xl font-bold text-white">J</Link>
+          <Logo variant="lockup" href="/" className="mx-auto mb-4" imgClassName="h-12" priority />
           <h1 className="text-2xl font-bold text-gray-900">เข้าสู่ระบบ</h1>
           <p className="mt-1 text-sm text-gray-500">ยินดีต้อนรับกลับ JobBoard</p>
         </div>

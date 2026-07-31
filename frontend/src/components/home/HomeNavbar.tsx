@@ -1,9 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, LogOut } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui'
+import { Logo } from '@/components/brand/Logo'
+import { MemberMenu, SEEKER_MENU_ITEMS, EMPLOYER_MENU_ITEMS, ADMIN_MENU_ITEMS } from '@/components/home/MemberMenu'
 
 const NAV_LINKS = [
   { href: '/jobs', label: 'ค้นหางาน' },
@@ -12,17 +14,8 @@ const NAV_LINKS = [
   { href: '#',     label: 'บทความ' },
 ]
 
-// Where a logged-in user's "dashboard" button should go, by role.
-// This preserves the auth-aware behavior of the previous Home page —
-// only the visual style changed to match the reference design.
-const DASHBOARD_PATH: Record<string, string> = {
-  seeker:   '/jobs',
-  employer: '/employer/jobs',
-  admin:    '/admin/dashboard',
-}
-
 export function HomeNavbar() {
-  const { user } = useAuth()
+  const { user, isLoading, logout } = useAuth()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -40,12 +33,9 @@ export function HomeNavbar() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4F46E5] text-sm font-bold text-white">
-              J
-            </div>
+          <Logo variant="icon" href="/" className="gap-2" priority>
             <span className="text-lg font-bold tracking-tight text-white">JobBoard</span>
-          </Link>
+          </Logo>
 
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white/80">
             {NAV_LINKS.map((link) => (
@@ -56,10 +46,10 @@ export function HomeNavbar() {
           </div>
 
           <div className="flex items-center gap-3">
-            {user ? (
-              <Link href={DASHBOARD_PATH[user.role] || '/jobs'}>
-                <Button size="sm">เข้าสู่แดชบอร์ด</Button>
-              </Link>
+            {isLoading ? (
+              <div className="h-8 w-24 animate-pulse rounded-lg bg-white/10" aria-hidden="true" />
+            ) : user ? (
+              <MemberMenu user={user} />
             ) : (
               <>
                 <Link href="/auth/login" className="hidden sm:block text-sm font-medium text-white/80 hover:text-white transition-colors">
@@ -90,10 +80,35 @@ export function HomeNavbar() {
                 {link.label}
               </Link>
             ))}
-            {!user && (
+
+            {!isLoading && !user && (
               <Link href="/auth/login" className="hover:text-white" onClick={() => setMobileOpen(false)}>
                 เข้าสู่ระบบ
               </Link>
+            )}
+
+            {!isLoading && user && (
+              <>
+                <div className="my-1 border-t border-white/10" />
+                {(user.role === 'seeker' ? SEEKER_MENU_ITEMS
+                  : user.role === 'employer' ? EMPLOYER_MENU_ITEMS
+                  : ADMIN_MENU_ITEMS
+                ).map((item, i) => (
+                  <Link key={`${item.href}-${i}`} href={item.href} className="flex items-center gap-2 hover:text-white"
+                    onClick={() => setMobileOpen(false)}>
+                    <item.icon className="h-4 w-4" aria-hidden="true" />
+                    {item.label}
+                  </Link>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => { setMobileOpen(false); logout() }}
+                  className="flex items-center gap-2 text-left text-red-300 hover:text-red-200"
+                >
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
+                  ออกจากระบบ
+                </button>
+              </>
             )}
           </div>
         </div>

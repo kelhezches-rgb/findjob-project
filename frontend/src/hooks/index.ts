@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 import { Job, Resume, Application, SavedJob, Category, Applicant, Pagination, AdminStats } from '@/types'
 
 export interface JobFilters {
-  q?: string; province?: string; jobType?: string
+  q?: string; province?: string; district?: string; subDistrict?: string; jobType?: string
   categoryId?: string; isRemote?: boolean; page?: number
   sort?: 'latest' | 'oldest' | 'salary_desc' | 'salary_asc'
 }

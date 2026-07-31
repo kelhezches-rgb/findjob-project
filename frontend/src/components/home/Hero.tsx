@@ -1,15 +1,19 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, MapPin } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { SearchableSelect, SelectOption } from '@/components/ui/SearchableSelect'
+import { PROVINCES } from '@/lib/thai-locations'
 import { useCountUp } from './useCountUp'
 import { heroStats, quickSearchTags } from './mockData'
+
+const provinceOptions: SelectOption[] = PROVINCES.map(p => ({ id: p.id, label: p.nameTh }))
 
 export function Hero() {
   const router = useRouter()
   const [q, setQ] = useState('')
-  const [province, setProvince] = useState('')
+  const [province, setProvince] = useState<SelectOption | null>(null)
   const { ref: liveCountRef, value: liveCountValue } = useCountUp(heroStats.liveCount)
 
   // Query param names (q, province) match the real /jobs page's filter
@@ -18,7 +22,7 @@ export function Hero() {
     const params = new URLSearchParams()
     const query = overrideQ ?? q
     if (query)    params.set('q', query)
-    if (province) params.set('province', province)
+    if (province) params.set('province', province.label)
     router.push(`/jobs?${params.toString()}`)
   }
 
@@ -76,15 +80,12 @@ export function Hero() {
               />
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 sm:w-44">
-              <MapPin className="h-5 w-5 shrink-0 text-gray-400" />
-              <input
-                type="text"
+            <div className="sm:w-52">
+              <SearchableSelect
+                placeholder="เลือกจังหวัด"
                 value={province}
-                onChange={(e) => setProvince(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="จังหวัด"
-                className="w-0 min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder-gray-400"
+                options={provinceOptions}
+                onChange={setProvince}
               />
             </div>
 

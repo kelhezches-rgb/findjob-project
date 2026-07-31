@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ToastProvider } from '@/components/ui/toast'
+import { AuthProvider } from '@/components/auth/AuthProvider'
 import './globals.css'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://jobboard.example.com'
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="th">
       <body className="antialiased">
         <a href="#main-content" className="skip-link">ข้ามไปยังเนื้อหาหลัก</a>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   )

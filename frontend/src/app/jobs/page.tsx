@@ -1,10 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { SeekerNavbar } from '@/components/layout'
 import { JobSearchBar } from '@/components/jobs/JobSearchBar'
 import { JobCard } from '@/components/jobs/JobCard'
-import { EmptyState, JobCardSkeleton, PaginationBar } from '@/components/ui'
+import { EmptyState, JobCardSkeleton, LoadingSpinner, PaginationBar } from '@/components/ui'
 import { useJobSearch, useCategories, useSavedJobs, JobFilters } from '@/hooks'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -15,8 +16,32 @@ const SORT_LABELS: Record<NonNullable<JobFilters['sort']>, string> = {
   salary_asc: 'เงินเดือน ต่ำ -> สูง',
 }
 
-export default function JobsPage() {
-  const [filters, setFilters] = useState<JobFilters>({ page: 1 })
+// Bug fix (Phase 7 audit): this page previously always started from a
+// hardcoded { page: 1 }, silently ignoring any ?q=&province=... handed off
+// by the home page's search bar — so a home-page search would land here
+// and show the *unfiltered* list. Seed initial filters from the URL instead.
+function filtersFromSearchParams(searchParams: URLSearchParams): JobFilters {
+  const initial: JobFilters = { page: 1 }
+  const q = searchParams.get('q')
+  const province = searchParams.get('province')
+  const district = searchParams.get('district')
+  const subDistrict = searchParams.get('subDistrict')
+  const categoryId = searchParams.get('categoryId')
+  const jobType = searchParams.get('jobType')
+  const sort = searchParams.get('sort') as JobFilters['sort'] | null
+  if (q) initial.q = q
+  if (province) initial.province = province
+  if (district) initial.district = district
+  if (subDistrict) initial.subDistrict = subDistrict
+  if (categoryId) initial.categoryId = categoryId
+  if (jobType) initial.jobType = jobType
+  if (sort) initial.sort = sort
+  return initial
+}
+
+function JobsPageContent() {
+  const searchParams = useSearchParams()
+  const [filters, setFilters] = useState<JobFilters>(() => filtersFromSearchParams(searchParams))
   const { categories } = useCategories()
   const { jobs, pagination, isLoading, error } = useJobSearch(filters)
   const { user } = useAuth()
@@ -80,5 +105,13 @@ export default function JobsPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function JobsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50"><LoadingSpinner /></div>}>
+      <JobsPageContent />
+    </Suspense>
   )
 }
