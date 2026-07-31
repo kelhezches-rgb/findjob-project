@@ -25,15 +25,24 @@ app.use(helmet({
 }))
 
 // ── CORS ─────────────────────────────────────────────────────
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://jobboard-th.vercel.app",
+]
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-    ],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error(`Not allowed by CORS: ${origin}`))
+      }
+    },
     credentials: true,
   })
-);
+)
 
 // ── Body parsing ─────────────────────────────────────────────
 app.use(express.json({ limit: '2mb' }))
