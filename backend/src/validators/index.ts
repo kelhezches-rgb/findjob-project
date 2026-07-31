@@ -5,8 +5,8 @@ export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   role: z.enum(['seeker', 'employer']),
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   companyName: z.string().min(1).optional(),
   position: z.string().optional(),
 }).superRefine((data, ctx) => {
