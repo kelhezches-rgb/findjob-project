@@ -8,6 +8,7 @@ import { api } from '@/lib/api'
 import { Input, Textarea, Select, Button } from '@/components/ui'
 import { useCategories } from '@/hooks'
 import { groupCategories } from '@/lib/categories'
+import { EXPERIENCE_LEVEL_LABELS, EXPERIENCE_LEVEL_NOT_SPECIFIED_LABEL } from '@/lib/experienceLevel'
 import { Job } from '@/types'
 
 const schema = z.object({
@@ -120,12 +121,10 @@ export default function JobPostForm({ initialJob }: { initialJob?: Job }) {
             <option value="remote">ทำงานทางไกล</option>
           </Select>
           <Select label="ระดับประสบการณ์" {...register('experienceLevel')}>
-            <option value="">ไม่ระบุ</option>
-            <option value="entry">Entry Level</option>
-            <option value="mid">Mid Level</option>
-            <option value="senior">Senior</option>
-            <option value="lead">Lead</option>
-            <option value="executive">Executive</option>
+            <option value="">{EXPERIENCE_LEVEL_NOT_SPECIFIED_LABEL}</option>
+            {(Object.keys(EXPERIENCE_LEVEL_LABELS) as Array<keyof typeof EXPERIENCE_LEVEL_LABELS>).map(level => (
+              <option key={level} value={level}>{EXPERIENCE_LEVEL_LABELS[level]}</option>
+            ))}
           </Select>
         </div>
         <div className="grid grid-cols-2 gap-3">
