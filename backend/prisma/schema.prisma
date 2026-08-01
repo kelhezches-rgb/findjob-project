@@ -44,6 +44,13 @@ enum ExperienceLevel {
   executive
 }
 
+// Values kept UPPER_SNAKE_CASE per explicit spec, even though other enums in
+// this file use lower_snake_case — see chat report for why.
+enum SalaryType {
+  RANGE
+  COMPANY_STRUCTURE
+}
+
 model User {
   id                   String     @id @default(uuid())
   email                String     @unique
@@ -68,21 +75,21 @@ model User {
 }
 
 model Company {
-  id            String     @id @default(uuid())
-  name          String
-  logoUrl       String?    @map("logo_url")
-  coverImageUrl String?    @map("cover_image_url")
-  website       String?
-  industry      String?
-  size          String?
-  description   String?
-  address       String?
-  province      String?
-  isVerified    Boolean    @default(false) @map("is_verified")
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
-  employers     Employer[]
-  jobs          Job[]
+  id             String     @id @default(uuid())
+  name           String
+  logoUrl        String?    @map("logo_url")
+  coverImageUrl  String?    @map("cover_image_url")
+  website        String?
+  industry       String?
+  size           String?
+  description    String?
+  address        String?
+  province       String?
+  isVerified     Boolean    @default(false) @map("is_verified")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  employers      Employer[]
+  jobs           Job[]
 
   @@index([industry])
   @@map("companies")
@@ -148,6 +155,7 @@ model Job {
   jobType         JobType          @map("job_type")
   experienceLevel ExperienceLevel? @map("experience_level")
   status          JobStatus        @default(draft)
+  salaryType      SalaryType       @default(RANGE) @map("salary_type")
   salaryMin       Decimal?         @map("salary_min") @db.Decimal(12, 2)
   salaryMax       Decimal?         @map("salary_max") @db.Decimal(12, 2)
   tags            String[]         @default([])

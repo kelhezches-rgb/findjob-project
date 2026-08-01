@@ -21,6 +21,9 @@ const schema = z.object({
   jobType:         z.enum(['full_time', 'part_time', 'contract', 'internship', 'remote']),
   experienceLevel: z.enum(['entry', 'mid', 'senior', 'lead', 'executive']).optional(),
   categoryId:      z.string().optional(),
+  // COMPANY_STRUCTURE = "ตามโครงสร้างบริษัท": salary follows the company's
+  // own pay scale instead of a posted numeric range. See lib/salary.ts.
+  salaryType:      z.enum(['RANGE', 'COMPANY_STRUCTURE']).default('RANGE'),
   salaryMin:       z.string().optional(),
   salaryMax:       z.string().optional(),
   status:          z.enum(['draft', 'active']).default('draft'),
@@ -35,7 +38,7 @@ export default function JobPostForm({ initialJob }: { initialJob?: Job }) {
   const [serverError, setServerError] = useState<string | null>(null)
   const isEditing = Boolean(initialJob)
 
-  const { register, handleSubmit } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: initialJob ? {
       title: initialJob.title, description: initialJob.description,
@@ -44,6 +47,7 @@ export default function JobPostForm({ initialJob }: { initialJob?: Job }) {
       isRemote: initialJob.isRemote, jobType: initialJob.jobType,
       experienceLevel: initialJob.experienceLevel || undefined,
       categoryId: initialJob.categoryId || '',
+      salaryType: initialJob.salaryType || 'RANGE',
       salaryMin: initialJob.salaryMin ? String(initialJob.salaryMin) : '',
       salaryMax: initialJob.salaryMax ? String(initialJob.salaryMax) : '',
       status: initialJob.status === 'closed' || initialJob.status === 'expired' ? 'draft' : initialJob.status,
@@ -51,16 +55,31 @@ export default function JobPostForm({ initialJob }: { initialJob?: Job }) {
     } : {
       title: '', description: '', requirements: '', benefits: '',
       location: '', province: '', isRemote: false, jobType: 'full_time',
-      categoryId: '', salaryMin: '', salaryMax: '', status: 'draft', expiresAt: '',
+      categoryId: '', salaryType: 'RANGE', salaryMin: '', salaryMax: '', status: 'draft', expiresAt: '',
     },
   })
+
+  const salaryType = watch('salaryType')
+  const isCompanyStructure = salaryType === 'COMPANY_STRUCTURE'
+
+  // Requirement 2: clear any previously entered numeric salary values the
+  // moment the employer switches to COMPANY_STRUCTURE, so a value typed
+  // before switching can't accidentally get resubmitted later.
+  const handleSalaryTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const next = e.target.value as FormValues['salaryType']
+    setValue('salaryType', next)
+    if (next === 'COMPANY_STRUCTURE') {
+      setValue('salaryMin', '')
+      setValue('salaryMax', '')
+    }
+  }
 
   const submitJob = async (values: FormValues, statusOverride?: 'draft' | 'active') => {
     setServerError(null)
     const payload = {
       ...values,
-      salaryMin:  values.salaryMin ? Number(values.salaryMin) : undefined,
-      salaryMax:  values.salaryMax ? Number(values.salaryMax) : undefined,
+      salaryMin:  values.salaryType === 'COMPANY_STRUCTURE' ? undefined : (values.salaryMin ? Number(values.salaryMin) : undefined),
+      salaryMax:  values.salaryType === 'COMPANY_STRUCTURE' ? undefined : (values.salaryMax ? Number(values.salaryMax) : undefined),
       categoryId: values.categoryId || undefined,
       expiresAt:  values.expiresAt ? new Date(`${values.expiresAt}T23:59:59Z`).toISOString() : undefined,
       status:     statusOverride ?? values.status,
@@ -129,10 +148,20 @@ export default function JobPostForm({ initialJob }: { initialJob?: Job }) {
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 flex flex-col gap-4">
         <h2 className="text-base font-semibold text-gray-900">เงินเดือนและวันหมดอายุ</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="เงินเดือนต่ำสุด (บาท)" type="number" placeholder="30000" {...register('salaryMin')} />
-          <Input label="เงินเดือนสูงสุด (บาท)" type="number" placeholder="60000" {...register('salaryMax')} />
-        </div>
+        <Select label="รูปแบบเงินเดือน" value={salaryType} onChange={handleSalaryTypeChange}>
+          <option value="RANGE">ระบุช่วงเงินเดือน</option>
+          <option value="COMPANY_STRUCTURE">ตามโครงสร้างบริษัท</option>
+        </Select>
+        {isCompanyStructure ? (
+          <p className="rounded-lg bg-gray-50 px-3.5 py-2.5 text-sm text-gray-500">
+            ประกาศงานนี้จะแสดงเงินเดือนเป็น &ldquo;ตามโครงสร้างบริษัท&rdquo; แทนช่วงตัวเลข
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="เงินเดือนต่ำสุด (บาท)" type="number" placeholder="30000" {...register('salaryMin')} />
+            <Input label="เงินเดือนสูงสุด (บาท)" type="number" placeholder="60000" {...register('salaryMax')} />
+          </div>
+        )}
         <Input label="วันหมดอายุประกาศ" type="date" {...register('expiresAt')} />
       </section>
 

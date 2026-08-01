@@ -37,8 +37,12 @@ export const createJobBaseSchema = z.object({
   isRemote:        z.boolean().default(false),
   jobType:         z.enum(['full_time', 'part_time', 'contract', 'internship', 'remote']),
   experienceLevel: z.enum(['entry', 'mid', 'senior', 'lead', 'executive']).optional(),
-  salaryMin:       z.number().positive().optional(),
-  salaryMax:       z.number().positive().optional(),
+  // COMPANY_STRUCTURE = "ตามโครงสร้างบริษัท" — salary follows the
+  // company's own pay scale instead of a posted numeric range. Never store
+  // that Thai string directly; the frontend maps salaryType -> label.
+  salaryType:      z.enum(['RANGE', 'COMPANY_STRUCTURE']).default('RANGE'),
+  salaryMin:       z.number().positive().nullable().optional(),
+  salaryMax:       z.number().positive().nullable().optional(),
   categoryId:      z.string().uuid().optional(),
   tags:            z.array(z.string()).default([]),
   status:          z.enum(['draft', 'active']).default('draft'),
@@ -48,21 +52,33 @@ export const createJobBaseSchema = z.object({
 // [แก้] ดึง refine logic (เช็ค salaryMin <= salaryMax) ออกมาเป็นฟังก์ชันแยก
 // เพื่อใช้ซ้ำได้ทั้งตอน create และ update โดยไม่ต้องเขียนซ้ำสองที่
 const validateSalaryRange = (
-  d: { salaryMin?: number; salaryMax?: number },
+  d: { salaryType?: 'RANGE' | 'COMPANY_STRUCTURE'; salaryMin?: number | null; salaryMax?: number | null },
   ctx: z.RefinementCtx
 ) => {
+  // COMPANY_STRUCTURE has no numeric salary to validate — see requirement 3.
+  if (d.salaryType === 'COMPANY_STRUCTURE') return
   if (d.salaryMin && d.salaryMax && d.salaryMin > d.salaryMax)
     ctx.addIssue({ code: 'custom', path: ['salaryMax'], message: 'Max must be ≥ min' })
 }
 
+// Belt-and-suspenders: even if the client forgets to clear salaryMin/Max
+// when switching to COMPANY_STRUCTURE, never persist stray numeric values
+// for that mode (requirement 2 — "Clear any previously entered numeric
+// salary values"). No-op for RANGE or when salaryType isn't part of this
+// request (partial updates that don't touch salaryType).
+const stripSalaryForCompanyStructure = <
+  T extends { salaryType?: 'RANGE' | 'COMPANY_STRUCTURE'; salaryMin?: number | null; salaryMax?: number | null }
+>(d: T): T =>
+  d.salaryType === 'COMPANY_STRUCTURE' ? { ...d, salaryMin: null, salaryMax: null } : d
+
 // [แก้] createJobSchema = base + superRefine — validation ตอน create เหมือนเดิมทุกจุด
-export const createJobSchema = createJobBaseSchema.superRefine(validateSalaryRange)
+export const createJobSchema = createJobBaseSchema.superRefine(validateSalaryRange).transform(stripSalaryForCompanyStructure)
 
 // [แก้] จุดที่พัง (bug เดิม): createJobSchema.partial() error เพราะ .superRefine()
 // เปลี่ยน createJobSchema จาก ZodObject เป็น ZodEffects ซึ่งไม่มี .partial()
 // ตอนนี้เรียก .partial() จาก createJobBaseSchema (ยังเป็น ZodObject) แทน
 // แล้วผูก superRefine ตัวเดียวกันกลับเข้าไป เพื่อคง validation เรื่อง salary ไว้ตอน update ด้วย
-export const updateJobSchema = createJobBaseSchema.partial().superRefine(validateSalaryRange)
+export const updateJobSchema = createJobBaseSchema.partial().superRefine(validateSalaryRange).transform(stripSalaryForCompanyStructure)
 
 export const jobStatusSchema = z.object({
   status: z.enum(['draft', 'active', 'closed', 'expired']),

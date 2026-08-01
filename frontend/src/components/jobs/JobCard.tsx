@@ -5,17 +5,11 @@ import { MapPin, Building2, Clock, Bookmark } from 'lucide-react'
 import { Job, JobType } from '@/types'
 import { CompanyLogo } from '@/components/company/CompanyLogo'
 import { CompanyQuickViewModal } from '@/components/company/CompanyQuickViewModal'
+import { formatSalary } from '@/lib/salary'
 
 const JOB_TYPE_LABELS: Record<JobType, string> = {
   full_time: 'งานประจำ', part_time: 'พาร์ทไทม์', contract: 'สัญญาจ้าง',
   internship: 'ฝึกงาน', remote: 'ทำงานทางไกล',
-}
-
-const formatSalary = (job: Job) => {
-  if (!job.salaryMin && !job.salaryMax) return null
-  const fmt = (n: number) => Number(n).toLocaleString('th-TH')
-  if (job.salaryMin && job.salaryMax) return `฿${fmt(Number(job.salaryMin))} – ฿${fmt(Number(job.salaryMax))}`
-  return `฿${fmt(Number(job.salaryMin ?? job.salaryMax))}+`
 }
 
 interface JobCardProps {
@@ -25,7 +19,7 @@ interface JobCardProps {
 }
 
 export const JobCard = memo(function JobCard({ job, isSaved, onToggleSave }: JobCardProps) {
-  const salary = formatSalary(job)
+  const salary = formatSalary(job, null)
   const [showCompanyModal, setShowCompanyModal] = useState(false)
 
   const handleToggleSave = (e: React.MouseEvent) => {

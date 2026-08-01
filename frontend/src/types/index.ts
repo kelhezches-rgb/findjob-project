@@ -30,12 +30,15 @@ export interface Company {
 }
 export interface Category { id: string; name: string; slug: string; icon?: string | null; group?: string | null }
 
+export type SalaryType = 'RANGE' | 'COMPANY_STRUCTURE'
+
 export interface Job {
   id: string; title: string; description: string
   requirements?: string | null; benefits?: string | null
   location?: string | null; province?: string | null
   isRemote: boolean; jobType: JobType; status: JobStatus
   experienceLevel?: ExperienceLevel | null
+  salaryType?: SalaryType
   salaryMin?: number | string | null; salaryMax?: number | string | null
   tags: string[]; viewsCount: number
   publishedAt?: string | null; expiresAt?: string | null

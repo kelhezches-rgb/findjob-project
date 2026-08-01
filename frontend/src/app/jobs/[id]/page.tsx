@@ -12,6 +12,7 @@ import { ApplyModal } from '@/components/jobs/ApplyModal'
 import { ApplyChoiceModal } from '@/components/jobs/ApplyChoiceModal'
 import { CompanyLogo } from '@/components/company/CompanyLogo'
 import { CompanyQuickViewModal } from '@/components/company/CompanyQuickViewModal'
+import { formatSalary } from '@/lib/salary'
 import { Job } from '@/types'
 
 const JOB_TYPE_LABELS: Record<string, string> = {
@@ -73,9 +74,7 @@ export default function JobDetailPage() {
 
   const handleApplySuccess = () => { setIsModalOpen(false); setHasApplied(true) }
 
-  const salary = job?.salaryMin && job?.salaryMax
-    ? `฿${Number(job.salaryMin).toLocaleString()} – ฿${Number(job.salaryMax).toLocaleString()}`
-    : null
+  const salary = job ? formatSalary(job, null) : null
 
   return (
     <div className="min-h-screen bg-gray-50">

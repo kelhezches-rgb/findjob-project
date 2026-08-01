@@ -3,14 +3,8 @@ import Link from 'next/link'
 import { Plus, Pencil, Trash2, Users, Eye, EyeOff } from 'lucide-react'
 import { useEmployerJobs } from '@/hooks'
 import { Button, Badge, EmptyState, LoadingSpinner, PaginationBar } from '@/components/ui'
+import { formatSalary } from '@/lib/salary'
 import { Job } from '@/types'
-
-const formatSalary = (j: Job) => {
-  if (!j.salaryMin && !j.salaryMax) return 'ไม่ระบุ'
-  const fmt = (n: number) => Number(n).toLocaleString('th-TH')
-  if (j.salaryMin && j.salaryMax) return `${fmt(Number(j.salaryMin))} – ${fmt(Number(j.salaryMax))}`
-  return `${fmt(Number(j.salaryMin ?? j.salaryMax))}+`
-}
 
 export default function EmployerJobsPage() {
   const { jobs, pagination, isLoading, deleteJob, setStatus, refetch } = useEmployerJobs()
@@ -46,7 +40,7 @@ export default function EmployerJobsPage() {
                   <h3 className="font-semibold text-gray-900">{job.title}</h3>
                   <Badge label={job.status} variant={job.status} />
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">{job.location || 'ไม่ระบุสถานที่'} · ฿{formatSalary(job)}</p>
+                <p className="text-sm text-gray-500 mt-0.5">{job.location || 'ไม่ระบุสถานที่'} · {formatSalary(job)}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <Link href={`/employer/jobs/${job.id}/applicants`} className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50">

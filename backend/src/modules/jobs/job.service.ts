@@ -34,6 +34,14 @@ export const searchJobs = async (q: any) => {
     ...(q.categoryId && { categoryId: q.categoryId }),
     ...(q.isRemote !== undefined && { isRemote: q.isRemote }),
     ...(q.experienceLevel && { experienceLevel: q.experienceLevel }),
+    // COMPANY_STRUCTURE jobs always have salaryMin/salaryMax = null (never
+    // 0 — see validators/index.ts stripSalaryForCompanyStructure), so a
+    // numeric salary filter here naturally excludes them (SQL: NULL >= x is
+    // never true) rather than wrongly matching them as "salary 0". This is
+    // the documented behavior for requirement 6: an active salaryMin/
+    // salaryMax filter excludes COMPANY_STRUCTURE jobs from results. With
+    // no salary filter active, they appear in results normally, and sort
+    // to the end (nulls: 'last') when sorting by salary.
     ...(q.salaryMin && { salaryMin: { gte: q.salaryMin } }),
     ...(q.salaryMax && { salaryMax: { lte: q.salaryMax } }),
     ...(q.q && {
