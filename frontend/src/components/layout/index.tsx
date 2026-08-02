@@ -178,6 +178,7 @@ export function EmployerNavbar() {
   useEffect(() => { setDrawerOpen(false) }, [pathname])
 
   return (
+    <>
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <Logo variant="icon" href="/" className="min-w-0 shrink-0 gap-2">
@@ -213,65 +214,78 @@ export function EmployerNavbar() {
           <Menu className="h-6 w-6" />
         </button>
       </div>
+    </header>
 
-      {/* Mobile full-screen drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
-          <div role="menu" aria-label="เมนูนายจ้าง" className="absolute inset-y-0 right-0 flex w-full max-w-xs flex-col bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-              <Logo variant="icon" href="/" className="min-w-0 gap-2">
-                <span className="truncate text-base font-bold text-navy-800">JobBoard</span>
-              </Logo>
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(false)}
-                aria-label="ปิดเมนู"
-                className="flex min-h-touch min-w-touch items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
+    {/* Mobile full-screen drawer — deliberately a SIBLING of <header>, not
+        nested inside it. <header> has backdrop-blur, and per the CSS spec
+        a filter/backdrop-filter on an ancestor becomes the containing
+        block for position:fixed descendants — that was pinning this
+        drawer's fixed inset-0 to the ~60px header strip instead of the
+        real viewport, which is what caused the transparent/clipped/
+        cut-off-items bug. Rendering it outside <header> fixes that at
+        the root cause instead of patching around it with extra CSS. */}
+    {drawerOpen && (
+      <div className="fixed inset-0 z-[60] md:hidden">
+        <div className="absolute inset-0 bg-black/40 transition-opacity" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
+        <div
+          role="menu"
+          aria-label="เมนูนายจ้าง"
+          className="absolute inset-y-0 right-0 flex w-full max-w-xs flex-col overflow-y-auto rounded-l-2xl border-l border-gray-200 bg-white shadow-xl animate-drawer-in-right"
+        >
+          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+            <Logo variant="icon" href="/" className="min-w-0 gap-2">
+              <span className="truncate text-base font-bold text-navy-800">JobBoard</span>
+            </Logo>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              aria-label="ปิดเมนู"
+              className="flex min-h-touch min-w-touch items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
 
-            {user?.employer?.company?.name && (
-              <p className="truncate border-b border-gray-100 px-4 py-2.5 text-sm text-gray-500">
-                {user.employer.company.name}
-              </p>
-            )}
+          {user?.employer?.company?.name && (
+            <p className="truncate border-b border-gray-100 px-4 py-2.5 text-sm text-gray-500">
+              {user.employer.company.name}
+            </p>
+          )}
 
-            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-              {EMPLOYER_NAV_ITEMS.map((l, i) => {
-                const active = pathname?.startsWith(l.href)
-                return (
-                  <Link
-                    key={`${l.href}-${i}`}
-                    href={l.href}
-                    role="menuitem"
-                    className={`flex min-h-touch items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors
-                      ${active ? 'bg-navy-50 text-navy-800' : 'text-gray-700 hover:bg-gray-100'}`}
-                  >
-                    <l.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    {l.label}
-                  </Link>
-                )
-              })}
-            </nav>
+          <nav className="flex flex-1 flex-col gap-1 p-3">
+            {EMPLOYER_NAV_ITEMS.map((l, i) => {
+              const active = pathname?.startsWith(l.href)
+              return (
+                <Link
+                  key={`${l.href}-${i}`}
+                  href={l.href}
+                  role="menuitem"
+                  onClick={() => setDrawerOpen(false)}
+                  className={`flex min-h-touch shrink-0 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors
+                    ${active ? 'bg-navy-50 text-navy-800' : 'text-gray-700 hover:bg-gray-100'}`}
+                >
+                  <l.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  {l.label}
+                </Link>
+              )
+            })}
+          </nav>
 
-            <div className="border-t border-gray-100 p-3">
-              <button
-                type="button"
-                onClick={() => { setDrawerOpen(false); logout() }}
-                role="menuitem"
-                className="flex min-h-touch w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-red-600 hover:bg-red-50"
-              >
-                <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
-                ออกจากระบบ
-              </button>
-            </div>
+          <div className="shrink-0 border-t border-gray-100 p-3">
+            <button
+              type="button"
+              onClick={() => { setDrawerOpen(false); logout() }}
+              role="menuitem"
+              className="flex min-h-touch w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+            >
+              <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
+              ออกจากระบบ
+            </button>
           </div>
         </div>
-      )}
-    </header>
+      </div>
+    )}
+    </>
   )
 }
 
