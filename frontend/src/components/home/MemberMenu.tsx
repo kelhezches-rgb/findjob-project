@@ -23,7 +23,7 @@ export const SEEKER_MENU_ITEMS: MenuItem[] = [
   { href: '/seeker/resumes',      label: 'Resume ของฉัน',    icon: FileText },
   { href: '/seeker/saved-jobs',   label: 'งานที่บันทึกไว้',  icon: Bookmark },
   { href: '/seeker/applications', label: 'งานที่สมัคร',      icon: ClipboardList },
-  { href: '/seeker/profile',      label: 'ตั้งค่าบัญชี',      icon: Settings },
+  { href: '/seeker/settings',      label: 'ตั้งค่าบัญชี',      icon: Settings },
 ]
 
 export const EMPLOYER_MENU_ITEMS: MenuItem[] = [
@@ -31,7 +31,7 @@ export const EMPLOYER_MENU_ITEMS: MenuItem[] = [
   { href: '/employer/company',   label: 'โปรไฟล์บริษัท',     icon: Building2 },
   { href: '/employer/jobs',      label: 'จัดการประกาศงาน',   icon: Briefcase },
   { href: '/employer/jobs',      label: 'ใบสมัครงาน',        icon: UsersIcon },
-  { href: '/employer/company',   label: 'ตั้งค่าบัญชี',       icon: Settings },
+  { href: '/employer/settings',   label: 'ตั้งค่าบัญชี',       icon: Settings },
 ]
 
 export const ADMIN_MENU_ITEMS: MenuItem[] = [

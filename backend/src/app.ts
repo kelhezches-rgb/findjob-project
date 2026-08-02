@@ -11,6 +11,7 @@ import employerRoutes from './modules/employer/employer.routes'
 import jobsRoutes     from './modules/jobs/jobs.routes'
 import adminRoutes    from './modules/admin/admin.routes'
 import companyRoutes  from './modules/companies/company.routes'
+import accountRoutes  from './modules/account/account.routes'
 import { errorHandler } from './middlewares/error.middleware'
 import { generalLimiter, authLimiter } from './middlewares/rateLimit.middleware'
 
@@ -68,6 +69,7 @@ app.use('/api/employer',  employerRoutes)
 app.use('/api/jobs',      jobsRoutes)
 app.use('/api/admin',     adminRoutes)
 app.use('/api/companies', companyRoutes)
+app.use('/api/account',   accountRoutes)
 
 // ── 404 catch-all ────────────────────────────────────────────
 app.use((_req, res) => {

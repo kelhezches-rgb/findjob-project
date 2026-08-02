@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import * as svc from './auth.service'
 import { AuthRequest } from '../../types'
 
-const COOKIE = {
+export const COOKIE = {
   httpOnly: true, secure: process.env.NODE_ENV === 'production',
   // 'lax' cannot be sent on cross-site XHR/fetch (e.g. Vercel → Render).
   // Only 'none' works there, and 'none' requires Secure — safe here since
@@ -21,9 +21,18 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { user, accessToken, refreshToken } = await svc.login(req.body.email, req.body.password)
-    res.cookie('refreshToken', refreshToken, COOKIE)
-    res.status(200).json({ user, accessToken })
+    const result = await svc.login(req.body.email, req.body.password)
+
+    // Account is PENDING_DELETION within its recovery window — do NOT grant
+    // a normal session. The frontend shows the recovery screen and uses
+    // recoveryToken to call /api/account/recover or just walks away.
+    if ('requiresAccountRecovery' in result) {
+      res.status(200).json(result)
+      return
+    }
+
+    res.cookie('refreshToken', result.refreshToken, COOKIE)
+    res.status(200).json({ user: result.user, accessToken: result.accessToken })
   } catch (e) { res.status(401).json({ message: (e as Error).message }) }
 }
 

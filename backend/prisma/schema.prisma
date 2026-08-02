@@ -51,26 +51,50 @@ enum SalaryType {
   COMPANY_STRUCTURE
 }
 
+// Values kept UPPER_SNAKE_CASE per explicit spec, same precedent as
+// SalaryType — other enums in this file use lower_snake_case.
+enum AccountStatus {
+  ACTIVE
+  PENDING_DELETION
+  DELETED
+}
+
 model User {
-  id                   String     @id @default(uuid())
-  email                String     @unique
-  passwordHash         String     @map("password_hash")
-  role                 UserRole   @default(seeker)
-  isActive             Boolean    @default(true) @map("is_active")
-  isVerified           Boolean    @default(false) @map("is_verified")
-  verifyToken          String?    @map("verify_token")
-  verifyTokenExpiresAt DateTime?  @map("verify_token_expires_at")
-  resetToken           String?    @map("reset_token")
-  resetTokenExpiresAt  DateTime?  @map("reset_token_expires_at")
-  lastLoginAt          DateTime?  @map("last_login_at")
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
+  id                   String        @id @default(uuid())
+  email                String        @unique
+  passwordHash         String        @map("password_hash")
+  role                 UserRole      @default(seeker)
+  isActive             Boolean       @default(true) @map("is_active")
+  isVerified           Boolean       @default(false) @map("is_verified")
+  verifyToken          String?       @map("verify_token")
+  verifyTokenExpiresAt DateTime?     @map("verify_token_expires_at")
+  resetToken           String?       @map("reset_token")
+  resetTokenExpiresAt  DateTime?     @map("reset_token_expires_at")
+  lastLoginAt          DateTime?     @map("last_login_at")
+  // Account deletion (15-day recovery window). accountStatus is the
+  // structured source of truth; isActive is also flipped to false on
+  // deletion request so the existing login/refresh isActive gate blocks
+  // access immediately, with no separate gating logic needed there.
+  accountStatus          AccountStatus @default(ACTIVE) @map("account_status")
+  deletionRequestedAt    DateTime?     @map("deletion_requested_at")
+  deletionScheduledAt    DateTime?     @map("deletion_scheduled_at")
+  deletedAt              DateTime?     @map("deleted_at")
+  // Short-lived token issued at login when accountStatus=PENDING_DELETION,
+  // so the recovery/proceed-with-deletion step can be authenticated
+  // without granting a normal session yet. Same pattern as verifyToken/
+  // resetToken above.
+  recoveryToken           String?     @map("recovery_token")
+  recoveryTokenExpiresAt  DateTime?   @map("recovery_token_expires_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
   jobSeeker            JobSeeker?
   employer             Employer?
 
   @@index([role])
   @@index([verifyToken])
   @@index([resetToken])
+  @@index([accountStatus])
+  @@index([recoveryToken])
   @@map("users")
 }
 

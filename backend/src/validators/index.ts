@@ -167,3 +167,16 @@ export const applicationStatusSchema = z.object({
   status:       z.enum(['pending', 'reviewed', 'shortlisted', 'rejected', 'hired']),
   employerNote: z.string().optional(),
 })
+
+// ── Account deletion ─────────────────────────────────────────
+// z.literal() is exact-match and case-sensitive by default — satisfies
+// "backend must independently verify DELETE/CONFIRM", not just trust the
+// frontend's own two-step gating.
+export const deleteAccountRequestSchema = z.object({
+  confirmDelete: z.literal('DELETE'),
+  confirmFinal:  z.literal('CONFIRM'),
+})
+
+export const recoverAccountSchema = z.object({
+  recoveryToken: z.string().min(1),
+})

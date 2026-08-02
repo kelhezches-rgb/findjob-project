@@ -11,7 +11,8 @@ type RegisterInput = {
 
 const sanitize = (user: any) => {
   const { passwordHash, verifyToken, resetToken,
-          verifyTokenExpiresAt, resetTokenExpiresAt, ...u } = user
+          verifyTokenExpiresAt, resetTokenExpiresAt,
+          recoveryToken, recoveryTokenExpiresAt, ...u } = user
   return u
 }
 
@@ -109,6 +110,28 @@ export const login = async (email: string, password: string) => {
   })
   if (!user) throw new Error('Invalid email or password')
   if (!await bcrypt.compare(password, user.passwordHash)) throw new Error('Invalid email or password')
+
+  if (user.accountStatus === 'PENDING_DELETION') {
+    if (user.deletionScheduledAt && user.deletionScheduledAt.getTime() <= Date.now()) {
+      // Requirement 5: after the 15-day deadline, normal login is blocked.
+      throw new Error('This account is past its recovery period and can no longer be restored by logging in.')
+    }
+    // Don't grant a normal session yet — issue a short-lived recovery
+    // token instead, same pattern as verifyToken/resetToken. The frontend
+    // shows the recovery screen; only /api/account/recover (using this
+    // token) actually restores access.
+    const recoveryToken = generateToken()
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { recoveryToken, recoveryTokenExpiresAt: tokenExpiry(1) },
+    })
+    return {
+      requiresAccountRecovery: true as const,
+      deletionScheduledAt: user.deletionScheduledAt,
+      recoveryToken,
+    }
+  }
+
   if (!user.isActive) throw new Error('Account is deactivated')
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
   const p = { userId: user.id, role: user.role as any }
@@ -118,7 +141,7 @@ export const login = async (email: string, password: string) => {
 export const refresh = async (token: string) => {
   const payload = verifyRefreshToken(token)
   const user    = await prisma.user.findUnique({ where: { id: payload.userId } })
-  if (!user || !user.isActive) throw new Error('User not found')
+  if (!user || !user.isActive || user.accountStatus !== 'ACTIVE') throw new Error('User not found')
   return { accessToken: signAccessToken({ userId: user.id, role: user.role as any }) }
 }
 
@@ -127,6 +150,6 @@ export const getMe = async (userId: string) => {
     where: { id: userId },
     include: { jobSeeker: true, employer: { include: { company: true } } },
   })
-  if (!user) throw new Error('User not found')
+  if (!user || user.accountStatus !== 'ACTIVE') throw new Error('User not found')
   return sanitize(user)
 }
