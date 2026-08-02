@@ -163,6 +163,51 @@ export const listApplicants = async (userId: string, jobId: string, params: {
   return { applications, pagination: paginationMeta(total, params.page, params.limit) }
 }
 
+// Shared authorization core for both resume-detail and CV-file access below.
+// Scoped through the APPLICATION id (which the employer already only ever
+// sees for applications on their own jobs, via listApplicants above) —
+// never trusts a bare resumeId/jobId/filePath sent from the frontend.
+// Throws a tagged error so the controller can map it to 403 vs 404.
+class ApplicantAccessError extends Error {
+  constructor(message: string, public status: 403 | 404) { super(message) }
+}
+
+const getAuthorizedApplication = async (userId: string, applicationId: string) => {
+  const emp = await getEmployer(userId)
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    include: { job: true, resume: true },
+  })
+  if (!application) throw new ApplicantAccessError('Application not found', 404)
+  if (application.job.companyId !== emp.companyId) {
+    throw new ApplicantAccessError('You do not have access to this application', 403)
+  }
+  return application
+}
+
+export const getApplicantResume = async (userId: string, applicationId: string) => {
+  const application = await getAuthorizedApplication(userId, applicationId)
+  if (!application.resume) throw new ApplicantAccessError('No resume submitted for this application', 404)
+  return application.resume
+}
+
+// Returns the absolute, sanitized on-disk path for the CV file (never the
+// raw DB value) — path.basename() strips any directory components, so a
+// malicious cvFileUrl value could never traverse outside the upload dir.
+export const getApplicantCvFilePath = async (userId: string, applicationId: string) => {
+  const application = await getAuthorizedApplication(userId, applicationId)
+  if (!application.resume?.cvFileUrl) throw new ApplicantAccessError('No CV file for this application', 404)
+
+  const uploadDir = process.env.UPLOAD_DIR || 'uploads'
+  const filename = path.basename(application.resume.cvFileUrl)
+  const filePath = path.join(process.cwd(), uploadDir, filename)
+
+  if (!fs.existsSync(filePath)) throw new ApplicantAccessError('CV file not found on server', 404)
+  return { filePath, fileName: application.resume.cvFileName || filename }
+}
+
+export { ApplicantAccessError }
+
 export const updateApplicationStatus = async (
   userId: string,
   applicationId: string,

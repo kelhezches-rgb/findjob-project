@@ -26,5 +26,7 @@ router.delete('/jobs/:id',  ctrl.deleteJob)
 
 router.get('/jobs/:id/applicants',       ctrl.listApplicants)
 router.patch('/applications/:id/status', validate(applicationStatusSchema), ctrl.updateAppStatus)
+router.get('/applications/:id/resume',   ctrl.getApplicantResume)
+router.get('/applications/:id/cv-file',  ctrl.downloadApplicantCv)
 
 export default router

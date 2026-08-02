@@ -1,9 +1,12 @@
 'use client'
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
-import { FileText, Download, Phone } from 'lucide-react'
+import { FileText, Download, Phone, Loader2, FileX } from 'lucide-react'
 import { useApplicants } from '@/hooks'
-import { API_ORIGIN } from '@/lib/api'
+import { api } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
 import { Badge, LoadingSpinner, EmptyState } from '@/components/ui'
+import { ApplicantResumeModal } from '@/components/employer/ApplicantResumeModal'
 import { Applicant } from '@/types'
 
 const STATUS_OPTIONS = ['pending', 'reviewed', 'shortlisted', 'rejected', 'hired']
@@ -14,8 +17,33 @@ const STATUS_LABELS: Record<string, string> = {
 export default function ApplicantsPage() {
   const params = useParams<{ id: string }>()
   const { applicants, isLoading, refetch, updateStatus } = useApplicants(params.id)
+  const { showToast } = useToast()
+  const [resumeModalAppId, setResumeModalAppId] = useState<string | null>(null)
+  const [openingCvFor, setOpeningCvFor] = useState<string | null>(null)
 
   const handleStatusChange = async (app: Applicant, newStatus: string) => { await updateStatus(app.id, newStatus) }
+
+  // Fetches the CV through the authorized endpoint (not a public /uploads
+  // URL) with the normal Authorization header, then opens the blob in a
+  // new tab — a plain <a href> new-tab navigation can't send auth headers.
+  const handleOpenCv = async (applicationId: string) => {
+    setOpeningCvFor(applicationId)
+    try {
+      const res = await api.get(`/employer/applications/${applicationId}/cv-file`, { responseType: 'blob' })
+      const blobUrl = URL.createObjectURL(res.data)
+      window.open(blobUrl, '_blank', 'noopener,noreferrer')
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
+    } catch (e: any) {
+      const message = e?.response?.status === 404
+        ? 'ไม่พบไฟล์ CV นี้ในระบบ'
+        : e?.response?.status === 403
+          ? 'คุณไม่มีสิทธิ์เข้าถึงไฟล์นี้'
+          : 'ไม่สามารถเปิดไฟล์ CV ได้'
+      showToast(message, 'error')
+    } finally {
+      setOpeningCvFor(null)
+    }
+  }
 
   return (
     <main id="main-content" className="mx-auto max-w-4xl px-4 py-8">
@@ -64,16 +92,31 @@ export default function ApplicantsPage() {
             )}
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {app.resume && (
-                <span className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700">
-                  <FileText className="h-3.5 w-3.5" />{app.resume.title}
+              {app.resume ? (
+                <button
+                  type="button"
+                  onClick={() => setResumeModalAppId(app.id)}
+                  className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+                >
+                  <FileText className="h-3.5 w-3.5" /> ดู Resume
+                </button>
+              ) : (
+                <span className="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-400">
+                  <FileX className="h-3.5 w-3.5" /> ไม่มี Resume
                 </span>
               )}
               {app.resume?.cvFileUrl && (
-                <a href={`${API_ORIGIN}${app.resume.cvFileUrl}`} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200">
-                  <Download className="h-3.5 w-3.5" />{app.resume.cvFileName || 'ดาวน์โหลด CV'}
-                </a>
+                <button
+                  type="button"
+                  onClick={() => handleOpenCv(app.id)}
+                  disabled={openingCvFor === app.id}
+                  className="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {openingCvFor === app.id
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <Download className="h-3.5 w-3.5" />}
+                  {app.resume.cvFileName || 'เปิดไฟล์ CV'}
+                </button>
               )}
             </div>
 
@@ -83,6 +126,10 @@ export default function ApplicantsPage() {
           </div>
         ))}
       </div>
+
+      {resumeModalAppId && (
+        <ApplicantResumeModal applicationId={resumeModalAppId} onClose={() => setResumeModalAppId(null)} />
+      )}
     </main>
   )
 }

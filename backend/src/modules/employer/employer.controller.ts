@@ -60,3 +60,24 @@ export const updateAppStatus = async (req: AuthRequest, res: Response) => {
     ok(res, { application: await svc.updateApplicationStatus(req.user!.userId, req.params.id, req.body) })
   } catch (e) { err(res, e) }
 }
+
+const errApplicant = (res: Response, e: unknown) => {
+  if (e instanceof svc.ApplicantAccessError) { res.status(e.status).json({ message: e.message }); return }
+  err(res, e, 500)
+}
+
+export const getApplicantResume = async (req: AuthRequest, res: Response) => {
+  try { ok(res, { resume: await svc.getApplicantResume(req.user!.userId, req.params.id) }) }
+  catch (e) { errApplicant(res, e) }
+}
+
+export const downloadApplicantCv = async (req: AuthRequest, res: Response) => {
+  try {
+    const { filePath } = await svc.getApplicantCvFilePath(req.user!.userId, req.params.id)
+    // sendFile (not download) — no Content-Disposition:attachment, so PDFs
+    // open inline in the new tab per requirement 2, rather than forcing a save dialog.
+    res.sendFile(filePath, (e) => {
+      if (e && !res.headersSent) res.status(404).json({ message: 'CV file not found' })
+    })
+  } catch (e) { errApplicant(res, e) }
+}
