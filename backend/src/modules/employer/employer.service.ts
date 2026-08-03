@@ -191,6 +191,42 @@ export const getApplicantResume = async (userId: string, applicationId: string) 
   return application.resume
 }
 
+// Deliberately a tight, explicit `select` (never `include`) — this is the
+// literal enforcement of "return only fields needed for recruitment":
+// passwordHash, verifyToken/resetToken/recoveryToken and their expiries,
+// isActive, accountStatus, deletion fields are never selected here at all,
+// not merely stripped afterward. Ownership check is the same as above.
+export const getApplicantDetail = async (userId: string, applicationId: string) => {
+  const emp = await getEmployer(userId)
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    select: {
+      id: true, status: true, coverLetter: true, employerNote: true,
+      appliedAt: true, reviewedAt: true,
+      job: { select: { id: true, title: true, companyId: true } },
+      resume: {
+        select: {
+          id: true, title: true, summary: true,
+          experiences: true, educations: true, skills: true, languages: true,
+          cvFileUrl: true, cvFileName: true, expectedSalary: true,
+        },
+      },
+      jobSeeker: {
+        select: {
+          firstName: true, lastName: true, phone: true, avatarUrl: true,
+          headline: true, bio: true,
+          user: { select: { email: true } },
+        },
+      },
+    },
+  })
+  if (!application) throw new ApplicantAccessError('Application not found', 404)
+  if (application.job.companyId !== emp.companyId) {
+    throw new ApplicantAccessError('You do not have access to this application', 403)
+  }
+  return application
+}
+
 // Returns the absolute, sanitized on-disk path for the CV file (never the
 // raw DB value) — path.basename() strips any directory components, so a
 // malicious cvFileUrl value could never traverse outside the upload dir.

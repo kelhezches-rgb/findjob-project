@@ -87,6 +87,23 @@ export interface Applicant {
   resume?: (Pick<Resume, 'id' | 'title'> & { cvFileUrl?: string | null; cvFileName?: string | null }) | null
 }
 
+// Full detail returned by GET /employer/applications/:id — only fields
+// that actually exist in the schema and are relevant to recruitment (see
+// chat report for fields the spec asked for that don't exist yet, e.g.
+// address/province/district/subdistrict on JobSeeker, screening questions).
+export interface ApplicantDetail {
+  id: string; status: ApplyStatus; coverLetter?: string | null
+  employerNote?: string | null; appliedAt: string; reviewedAt?: string | null
+  job: { id: string; title: string }
+  jobSeeker: Pick<JobSeekerProfile, 'firstName' | 'lastName' | 'phone' | 'avatarUrl' | 'headline' | 'bio'> & {
+    user: { email: string }
+  }
+  resume?: Pick<Resume,
+    'id' | 'title' | 'summary' | 'experiences' | 'educations' | 'skills' | 'languages'
+    | 'cvFileUrl' | 'cvFileName' | 'expectedSalary'
+  > | null
+}
+
 export interface SavedJob {
   id: string; savedAt: string
   job: Pick<Job, 'id' | 'title' | 'jobType' | 'status'> & {

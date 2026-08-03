@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { FileText, Download, Phone, Loader2, FileX } from 'lucide-react'
 import { useApplicants } from '@/hooks'
@@ -72,7 +73,10 @@ export default function ApplicantsPage() {
           <div key={app.id} className="rounded-2xl border border-gray-200 bg-white p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-semibold text-gray-900">{app.jobSeeker.firstName} {app.jobSeeker.lastName}</p>
+                <Link href={`/employer/jobs/${params.id}/applicants/${app.id}`}
+                  className="font-semibold text-gray-900 hover:text-indigo-600 hover:underline">
+                  {app.jobSeeker.firstName} {app.jobSeeker.lastName}
+                </Link>
                 {app.jobSeeker.headline && <p className="text-sm text-gray-500">{app.jobSeeker.headline}</p>}
                 {app.jobSeeker.phone && (
                   <p className="flex items-center gap-1 text-xs text-gray-400 mt-0.5"><Phone className="h-3 w-3" />{app.jobSeeker.phone}</p>

@@ -71,6 +71,11 @@ export const getApplicantResume = async (req: AuthRequest, res: Response) => {
   catch (e) { errApplicant(res, e) }
 }
 
+export const getApplicantDetail = async (req: AuthRequest, res: Response) => {
+  try { ok(res, { application: await svc.getApplicantDetail(req.user!.userId, req.params.id) }) }
+  catch (e) { errApplicant(res, e) }
+}
+
 export const downloadApplicantCv = async (req: AuthRequest, res: Response) => {
   try {
     const { filePath } = await svc.getApplicantCvFilePath(req.user!.userId, req.params.id)
