@@ -12,7 +12,10 @@ export const getCompanyById = async (id: string) => {
     where: { id },
     include: { _count: { select: { jobs: { where: activeJobWhere() } } } },
   })
-  if (!company) throw new Error('Company not found')
+  // isActive=false (admin-deleted) is treated the same as not existing at
+  // all from the public's perspective — requirement 3, "hide from public
+  // company search."
+  if (!company || !company.isActive) throw new Error('Company not found')
 
   const jobs = await prisma.job.findMany({
     where: { companyId: id, ...activeJobWhere() },

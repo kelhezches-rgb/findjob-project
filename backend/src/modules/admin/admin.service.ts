@@ -122,3 +122,68 @@ export const listCompanies = async (params: {
 export const verifyCompany = async (id: string, isVerified: boolean) => {
   return prisma.company.update({ where: { id }, data: { isVerified } })
 }
+
+// Basic audit trail via server logs (same approach as account.service.ts —
+// this project has no persisted AuditLog table).
+const auditLog = (event: string, adminUserId: string, extra: Record<string, unknown> = {}) => {
+  console.log(`[Audit] ${event}`, { adminUserId, at: new Date().toISOString(), ...extra })
+}
+
+// Counts shown in the admin confirmation modal before deleting.
+export const getCompanyDeletionImpact = async (companyId: string) => {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { id: true, name: true, isActive: true, _count: { select: { employers: true, jobs: true } } },
+  })
+  if (!company) throw new Error('Company not found')
+
+  const applicationsCount = await prisma.application.count({ where: { job: { companyId } } })
+  return {
+    id: company.id,
+    name: company.name,
+    isActive: company.isActive,
+    employersCount: company._count.employers,
+    jobsCount: company._count.jobs,
+    applicationsCount,
+  }
+}
+
+// Soft delete only — see chat report for why hard delete was rejected.
+// - Company: isActive=false, deletedAt/deletedById set. Public company
+//   pages and search treat isActive=false as not-found (see companies
+//   module + jobs module).
+// - Jobs: existing active postings are set to status='closed'. This is
+//   the ONLY place that needed to change to hide them from public search
+//   — the search query already filters status='active', so a closed job
+//   disappears from results with zero new filtering logic.
+// - Employers/Users/Applications/Resumes/SavedJobs: left completely
+//   untouched. Applications and resumes are explicitly preserved per
+//   requirement 3. Employer accounts tied to this company are blocked
+//   from company-management actions via the isActive check already
+//   centralized in employer.service.ts's getEmployer() helper — not
+//   deleted, not logged out, just can't manage jobs/company profile
+//   while the company is inactive.
+export const deleteCompany = async (adminUserId: string, companyId: string, confirmation: string) => {
+  const company = await prisma.company.findUnique({ where: { id: companyId } })
+  if (!company) throw new Error('Company not found')
+  if (!company.isActive) throw new Error('Company is already deleted')
+
+  // Independently verified server-side — either the exact company name or
+  // the literal 'DELETE', case-sensitive.
+  if (confirmation !== company.name && confirmation !== 'DELETE') {
+    throw new Error('Confirmation text does not match')
+  }
+
+  await prisma.$transaction([
+    prisma.company.update({
+      where: { id: companyId },
+      data: { isActive: false, deletedAt: new Date(), deletedById: adminUserId },
+    }),
+    prisma.job.updateMany({
+      where: { companyId, status: 'active' },
+      data: { status: 'closed' },
+    }),
+  ])
+
+  auditLog('company soft-deleted', adminUserId, { companyId, companyName: company.name })
+}

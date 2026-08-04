@@ -303,10 +303,9 @@ export function AdminNavbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-sm font-bold text-white">A</div>
+        <Logo variant="icon" href="/" className="gap-2">
           <span className="text-base font-bold text-gray-900">Admin Panel</span>
-        </div>
+        </Logo>
         <nav className="flex items-center gap-1">
           {ADMIN_LINKS.map(l => (
             <Link key={l.href} href={l.href}

@@ -9,6 +9,18 @@ const getEmployer = async (userId: string) => {
   return e
 }
 
+// Called only from write/management actions below (create/update job,
+// update company profile, upload logo/cover) — never from read-only
+// functions like getProfile/listJobs/listApplicants, so an employer whose
+// company was admin-deleted can still SEE their existing data, just can't
+// make new changes. Requirement 3: "block employer users linked only to
+// that company from company-management actions."
+const assertCompanyActive = (emp: { company: { isActive: boolean } }) => {
+  if (!emp.company.isActive) {
+    throw new Error('This company has been deactivated and can no longer be managed')
+  }
+}
+
 // ── Company Profile ──────────────────────────────────────────
 export const getProfile = async (userId: string) => {
   return getEmployer(userId)
@@ -20,6 +32,7 @@ export const updateProfile = async (userId: string, data: {
   address?: string; province?: string; position?: string
 }) => {
   const emp = await getEmployer(userId)
+  assertCompanyActive(emp)
   const { position, companyName, ...companyData } = data
   await prisma.company.update({
     where: { id: emp.companyId },
@@ -36,6 +49,7 @@ export const uploadCompanyImage = async (
   file: Express.Multer.File
 ) => {
   const emp = await getEmployer(userId)
+  assertCompanyActive(emp)
 
   // Best-effort cleanup of the previous image (only ever a local /uploads/ path)
   const previousUrl = emp.company[field]
@@ -85,6 +99,7 @@ export const getJob = async (userId: string, id: string) => {
 
 export const createJob = async (userId: string, input: any) => {
   const emp = await getEmployer(userId)
+  assertCompanyActive(emp)
   return prisma.job.create({
     data: {
       ...input,
@@ -98,6 +113,7 @@ export const createJob = async (userId: string, input: any) => {
 
 export const updateJob = async (userId: string, id: string, input: any) => {
   const emp = await getEmployer(userId)
+  assertCompanyActive(emp)
   const existing = await prisma.job.findFirst({ where: { id, companyId: emp.companyId } })
   if (!existing) throw new Error('Job not found')
   const wasPublished = existing.status !== 'active' && input.status === 'active'
@@ -113,6 +129,7 @@ export const updateJob = async (userId: string, id: string, input: any) => {
 
 export const setJobStatus = async (userId: string, id: string, status: string) => {
   const emp = await getEmployer(userId)
+  assertCompanyActive(emp)
   const existing = await prisma.job.findFirst({ where: { id, companyId: emp.companyId } })
   if (!existing) throw new Error('Job not found')
   return prisma.job.update({
@@ -126,6 +143,7 @@ export const setJobStatus = async (userId: string, id: string, status: string) =
 
 export const deleteJob = async (userId: string, id: string) => {
   const emp = await getEmployer(userId)
+  assertCompanyActive(emp)
   const existing = await prisma.job.findFirst({ where: { id, companyId: emp.companyId } })
   if (!existing) throw new Error('Job not found')
   await prisma.job.delete({ where: { id } })
@@ -250,6 +268,7 @@ export const updateApplicationStatus = async (
   input: { status: string; employerNote?: string }
 ) => {
   const emp = await getEmployer(userId)
+  assertCompanyActive(emp)
   const app = await prisma.application.findUnique({
     where: { id: applicationId },
     include: { job: true },

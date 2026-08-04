@@ -163,6 +163,13 @@ export const adminQuerySchema = z.object({
   limit:  z.coerce.number().positive().max(100).default(20),
 })
 
+// Server independently verifies this against the company's actual name (or
+// the literal 'DELETE') in admin.service.ts — not just trusting the client
+// gated the confirmation correctly.
+export const adminDeleteCompanySchema = z.object({
+  confirmation: z.string().min(1),
+})
+
 export const applicationStatusSchema = z.object({
   status:       z.enum(['pending', 'reviewed', 'shortlisted', 'rejected', 'hired']),
   employerNote: z.string().optional(),

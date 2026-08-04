@@ -110,12 +110,19 @@ model Company {
   address        String?
   province       String?
   isVerified     Boolean    @default(false) @map("is_verified")
+  // Soft delete (admin company removal) — see chat report for reasoning.
+  // deletedById is intentionally a plain scalar (the admin User's id), not
+  // a Prisma relation, so this change doesn't also require touching User.
+  isActive       Boolean    @default(true) @map("is_active")
+  deletedAt      DateTime?  @map("deleted_at")
+  deletedById    String?    @map("deleted_by_id")
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
   employers      Employer[]
   jobs           Job[]
 
   @@index([industry])
+  @@index([isActive])
   @@map("companies")
 }
 

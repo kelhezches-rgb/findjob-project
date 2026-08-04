@@ -1,13 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Search, ShieldCheck, Shield } from 'lucide-react'
+import { Search, ShieldCheck, Shield, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { LoadingSpinner, PaginationBar, EmptyState } from '@/components/ui'
+import { DeleteCompanyModal } from '@/components/admin/DeleteCompanyModal'
 import { Pagination } from '@/types'
 
 interface AdminCompany {
   id: string; name: string; industry?: string | null; province?: string | null
-  isVerified: boolean; createdAt: string
+  isVerified: boolean; isActive: boolean; createdAt: string
   _count: { jobs: number; employers: number }
 }
 
@@ -17,6 +18,7 @@ export default function AdminCompaniesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [q, setQ] = useState('')
   const [page, setPage] = useState(1)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const fetch = async () => {
     setIsLoading(true)
@@ -31,6 +33,11 @@ export default function AdminCompaniesPage() {
   const toggleVerify = async (id: string, current: boolean) => {
     await api.patch(`/admin/companies/${id}/verify`, { isVerified: !current })
     setCompanies(prev => prev.map(c => c.id === id ? { ...c, isVerified: !current } : c))
+  }
+
+  const handleDeleted = () => {
+    setCompanies(prev => prev.map(c => c.id === deleteTargetId ? { ...c, isActive: false } : c))
+    setDeleteTargetId(null)
   }
 
   return (
@@ -62,7 +69,7 @@ export default function AdminCompaniesPage() {
             </thead>
             <tbody>
               {companies.map(c => (
-                <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                <tr key={c.id} className={`border-b border-gray-100 last:border-0 hover:bg-gray-50 ${!c.isActive ? 'opacity-60' : ''}`}>
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-900">{c.name}</p>
                     <p className="text-xs text-gray-400">{c.province || '—'}</p>
@@ -70,17 +77,30 @@ export default function AdminCompaniesPage() {
                   <td className="px-4 py-3 hidden md:table-cell text-gray-600">{c.industry || '—'}</td>
                   <td className="px-4 py-3 hidden lg:table-cell text-gray-600">{c._count.jobs} งาน · {c._count.employers} HR</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${c.isVerified ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {c.isVerified ? <ShieldCheck className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
-                      {c.isVerified ? 'Verified' : 'Unverified'}
-                    </span>
+                    {!c.isActive ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600">
+                        <Trash2 className="h-3 w-3" /> ถูกลบแล้ว
+                      </span>
+                    ) : (
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${c.isVerified ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {c.isVerified ? <ShieldCheck className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
+                        {c.isVerified ? 'Verified' : 'Unverified'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-1">
                       <button onClick={() => toggleVerify(c.id, c.isVerified)}
-                        className={`rounded-lg p-2 transition-colors ${c.isVerified ? 'text-green-600 hover:bg-red-50 hover:text-red-600' : 'text-gray-400 hover:bg-green-50 hover:text-green-600'}`}
+                        disabled={!c.isActive}
+                        className={`rounded-lg p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${c.isVerified ? 'text-green-600 hover:bg-red-50 hover:text-red-600' : 'text-gray-400 hover:bg-green-50 hover:text-green-600'}`}
                         title={c.isVerified ? 'ยกเลิก Verify' : 'Verify บริษัท'}>
                         {c.isVerified ? <Shield className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                      </button>
+                      <button onClick={() => setDeleteTargetId(c.id)}
+                        disabled={!c.isActive}
+                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="ลบบริษัท">
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -92,6 +112,14 @@ export default function AdminCompaniesPage() {
       )}
 
       {pagination && <PaginationBar pagination={pagination} onPageChange={setPage} />}
+
+      {deleteTargetId && (
+        <DeleteCompanyModal
+          companyId={deleteTargetId}
+          onClose={() => setDeleteTargetId(null)}
+          onDeleted={handleDeleted}
+        />
+      )}
     </div>
   )
 }

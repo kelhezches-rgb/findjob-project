@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import * as svc from './admin.service'
+import { AuthRequest } from '../../types'
 
 const ok  = (res: Response, data: any, status = 200) => res.status(status).json(data)
 const err = (res: Response, e: unknown, status = 400) =>
@@ -61,4 +62,22 @@ export const verifyCompany = async (req: Request, res: Response) => {
   try {
     ok(res, { company: await svc.verifyCompany(req.params.id, req.body.isVerified) })
   } catch (e) { err(res, e) }
+}
+
+export const getCompanyDeletionImpact = async (req: Request, res: Response) => {
+  try { ok(res, await svc.getCompanyDeletionImpact(req.params.id)) }
+  catch (e) { err(res, e, 404) }
+}
+
+export const deleteCompany = async (req: AuthRequest, res: Response) => {
+  try {
+    await svc.deleteCompany(req.user!.userId, req.params.id, req.body.confirmation)
+    ok(res, { message: 'Company deactivated' })
+  } catch (e) {
+    const message = (e as Error).message
+    // Distinguish "already deleted" / bad confirmation (client error) from
+    // a genuinely missing company, rather than a flat 400 for everything.
+    const status = message === 'Company not found' ? 404 : 400
+    err(res, e, status)
+  }
 }
