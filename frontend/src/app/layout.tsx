@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { ToastProvider } from '@/components/ui/toast'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import './globals.css'
@@ -24,6 +24,15 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} — หางาน หาคน`,
     description: SITE_DESCRIPTION,
   },
+}
+
+// viewportFit: 'cover' lets the page draw under the iPhone notch/home
+// indicator — required for env(safe-area-inset-*) (used by the sticky
+// headers and mobile drawers) to resolve to a real value instead of 0.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

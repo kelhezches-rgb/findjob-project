@@ -36,7 +36,7 @@ export function CompanyQuickViewModal({ companyId, onClose }: CompanyQuickViewMo
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+        className="relative max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         <button

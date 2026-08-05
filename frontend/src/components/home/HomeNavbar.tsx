@@ -27,6 +27,7 @@ export function HomeNavbar() {
 
   return (
     <nav
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
       className={`fixed inset-x-0 top-0 z-50 transition-all ${
         scrolled ? 'bg-[#0F0F23]/95 backdrop-blur-md border-b border-white/10' : 'bg-transparent'
       }`}

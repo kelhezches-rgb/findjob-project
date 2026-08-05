@@ -1,12 +1,18 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Menu, X, LayoutDashboard, Building2, PlusCircle, Briefcase, Users, Settings, LogOut,
+  LayoutDashboard, Building2, PlusCircle, Briefcase, Users, Settings,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Logo } from '@/components/brand/Logo'
+import { MobileNavDrawer, MobileNavTrigger } from '@/components/layout/MobileNavDrawer'
+
+// Shared safe-area-aware sticky header padding — every top bar in the app
+// uses this same value so headers are visually consistent and never sit
+// under an iPhone notch/status bar when the app is edge-to-edge.
+const HEADER_SAFE_TOP = { paddingTop: 'env(safe-area-inset-top)' }
 
 const SEEKER_LINKS = [
   { href: '/jobs',                 label: 'ค้นหางาน' },
@@ -28,114 +34,43 @@ export function SeekerNavbar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const [drawerOpen, setDrawerOpen] = useState(false)
-
-  useEffect(() => {
-    if (!drawerOpen) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
-  }, [drawerOpen])
-
-  useEffect(() => {
-    if (!drawerOpen) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setDrawerOpen(false)
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [drawerOpen])
-
-  useEffect(() => { setDrawerOpen(false) }, [pathname])
+  const displayName = [user?.jobSeeker?.firstName, user?.jobSeeker?.lastName].filter(Boolean).join(' ')
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-        <Logo variant="icon" href="/" className="min-w-0 shrink-0 gap-2">
-          <span className="text-base font-bold text-navy-800">JobBoard</span>
-        </Logo>
-        <nav className="hidden md:flex items-center gap-1">
-          {SEEKER_LINKS.map(l => (
-            <Link key={l.href} href={l.href}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                ${pathname?.startsWith(l.href) ? 'bg-navy-50 text-navy-800' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {l.label}
+    <>
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur" style={HEADER_SAFE_TOP}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <Logo variant="icon" href="/" className="min-w-0 shrink-0 gap-2">
+            <span className="text-base font-bold text-navy-800">JobBoard</span>
+          </Logo>
+          <nav className="hidden md:flex items-center gap-1">
+            {SEEKER_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                  ${pathname?.startsWith(l.href) ? 'bg-navy-50 text-navy-800' : 'text-gray-600 hover:bg-gray-100'}`}>
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="hidden items-center gap-3 md:flex">
+            <Link href="/seeker/profile" className="max-w-[10rem] truncate text-sm text-gray-600 hover:text-gray-900">
+              {displayName}
             </Link>
-          ))}
-        </nav>
-        <div className="hidden items-center gap-3 md:flex">
-          <Link href="/seeker/profile" className="max-w-[10rem] truncate text-sm text-gray-600 hover:text-gray-900">
-            {user?.jobSeeker?.firstName} {user?.jobSeeker?.lastName}
-          </Link>
-          <button onClick={logout} className="min-h-touch rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">ออก</button>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          aria-label="เปิดเมนู"
-          aria-haspopup="menu"
-          aria-expanded={drawerOpen}
-          className="flex min-h-touch min-w-touch items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 md:hidden"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
-      </div>
-
-      {drawerOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
-          <div role="menu" aria-label="เมนูผู้หางาน" className="absolute inset-y-0 right-0 flex w-full max-w-xs flex-col bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-              <Logo variant="icon" href="/" className="min-w-0 gap-2">
-                <span className="truncate text-base font-bold text-navy-800">JobBoard</span>
-              </Logo>
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(false)}
-                aria-label="ปิดเมนู"
-                className="flex min-h-touch min-w-touch items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {(user?.jobSeeker?.firstName || user?.jobSeeker?.lastName) && (
-              <p className="truncate border-b border-gray-100 px-4 py-2.5 text-sm text-gray-500">
-                {user.jobSeeker?.firstName} {user.jobSeeker?.lastName}
-              </p>
-            )}
-
-            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-              {SEEKER_NAV_ITEMS.map((l, i) => {
-                const active = pathname?.startsWith(l.href)
-                return (
-                  <Link
-                    key={`${l.href}-${i}`}
-                    href={l.href}
-                    role="menuitem"
-                    className={`flex min-h-touch items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors
-                      ${active ? 'bg-navy-50 text-navy-800' : 'text-gray-700 hover:bg-gray-100'}`}
-                  >
-                    <l.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    {l.label}
-                  </Link>
-                )
-              })}
-            </nav>
-
-            <div className="border-t border-gray-100 p-3">
-              <button
-                type="button"
-                onClick={() => { setDrawerOpen(false); logout() }}
-                role="menuitem"
-                className="flex min-h-touch w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-red-600 hover:bg-red-50"
-              >
-                <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
-                ออกจากระบบ
-              </button>
-            </div>
+            <button onClick={logout} className="min-h-touch rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">ออก</button>
           </div>
+          <MobileNavTrigger open={drawerOpen} onClick={() => setDrawerOpen(true)} />
         </div>
-      )}
-    </header>
+      </header>
+
+      <MobileNavDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        items={SEEKER_NAV_ITEMS}
+        subtitle={displayName || null}
+        onLogout={logout}
+        ariaLabel="เมนูผู้หางาน"
+      />
+    </>
   )
 }
 
@@ -145,11 +80,11 @@ export function SeekerNavbar() {
 // are only viewable per-job) and no dedicated "Account Settings" page —
 // both point at their closest existing equivalent until those are built.
 const EMPLOYER_NAV_ITEMS = [
-  { href: '/employer/dashboard',  label: 'Dashboard',      icon: LayoutDashboard },
-  { href: '/employer/company',    label: 'บริษัท',          icon: Building2 },
-  { href: '/employer/jobs/create',label: 'ลงประกาศงาน',     icon: PlusCircle },
-  { href: '/employer/jobs',       label: 'ประกาศงาน',       icon: Briefcase },
-  { href: '/employer/jobs',       label: 'ใบสมัครงาน',      icon: Users },
+  { href: '/employer/dashboard',   label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/employer/company',     label: 'บริษัท',          icon: Building2 },
+  { href: '/employer/jobs/create', label: 'ลงประกาศงาน',     icon: PlusCircle },
+  { href: '/employer/jobs',        label: 'ประกาศงาน',       icon: Briefcase },
+  { href: '/employer/jobs',        label: 'ใบสมัครงาน',      icon: Users },
   { href: '/employer/settings',    label: 'ตั้งค่าบัญชี',     icon: Settings },
 ]
 
@@ -157,134 +92,44 @@ export function EmployerNavbar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const [drawerOpen, setDrawerOpen] = useState(false)
-
-  // Lock background scroll while the mobile drawer is open.
-  useEffect(() => {
-    if (!drawerOpen) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
-  }, [drawerOpen])
-
-  // Close the drawer on Escape.
-  useEffect(() => {
-    if (!drawerOpen) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setDrawerOpen(false)
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [drawerOpen])
-
-  // Close the drawer automatically if the route changes underneath it.
-  useEffect(() => { setDrawerOpen(false) }, [pathname])
+  const companyName = user?.employer?.company?.name
 
   return (
     <>
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-        <Logo variant="icon" href="/" className="min-w-0 shrink-0 gap-2">
-          <span className="text-base font-bold text-navy-800">JobBoard</span>
-          <span className="hidden text-xs text-gray-400 sm:inline">for Employers</span>
-        </Logo>
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur" style={HEADER_SAFE_TOP}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <Logo variant="icon" href="/" className="min-w-0 shrink-0 gap-2">
+            <span className="text-base font-bold text-navy-800">JobBoard</span>
+            <span className="hidden text-xs text-gray-400 sm:inline">for Employers</span>
+          </Logo>
 
-        {/* Desktop nav — same items/behavior as before, just sourced from the shared list */}
-        <nav className="hidden md:flex items-center gap-1">
-          {EMPLOYER_NAV_ITEMS.map((l, i) => (
-            <Link key={`${l.href}-${i}`} href={l.href}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                ${pathname?.startsWith(l.href) ? 'bg-navy-50 text-navy-800' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-3 md:flex">
-          <span className="max-w-[10rem] truncate text-sm text-gray-500">{user?.employer?.company?.name}</span>
-          <button onClick={logout} className="min-h-touch rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100">ออก</button>
-        </div>
-
-        {/* Mobile: hamburger trigger — every desktop feature above is also in the drawer below */}
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          aria-label="เปิดเมนู"
-          aria-haspopup="menu"
-          aria-expanded={drawerOpen}
-          className="flex min-h-touch min-w-touch items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 md:hidden"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
-      </div>
-    </header>
-
-    {/* Mobile full-screen drawer — deliberately a SIBLING of <header>, not
-        nested inside it. <header> has backdrop-blur, and per the CSS spec
-        a filter/backdrop-filter on an ancestor becomes the containing
-        block for position:fixed descendants — that was pinning this
-        drawer's fixed inset-0 to the ~60px header strip instead of the
-        real viewport, which is what caused the transparent/clipped/
-        cut-off-items bug. Rendering it outside <header> fixes that at
-        the root cause instead of patching around it with extra CSS. */}
-    {drawerOpen && (
-      <div className="fixed inset-0 z-[60] md:hidden">
-        <div className="absolute inset-0 bg-black/40 transition-opacity" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
-        <div
-          role="menu"
-          aria-label="เมนูนายจ้าง"
-          className="absolute inset-y-0 right-0 flex w-full max-w-xs flex-col overflow-y-auto rounded-l-2xl border-l border-gray-200 bg-white shadow-xl animate-drawer-in-right"
-        >
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-            <Logo variant="icon" href="/" className="min-w-0 gap-2">
-              <span className="truncate text-base font-bold text-navy-800">JobBoard</span>
-            </Logo>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              aria-label="ปิดเมนู"
-              className="flex min-h-touch min-w-touch items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
-            >
-              <X className="h-6 w-6" />
-            </button>
-          </div>
-
-          {user?.employer?.company?.name && (
-            <p className="truncate border-b border-gray-100 px-4 py-2.5 text-sm text-gray-500">
-              {user.employer.company.name}
-            </p>
-          )}
-
-          <nav className="flex flex-1 flex-col gap-1 p-3">
-            {EMPLOYER_NAV_ITEMS.map((l, i) => {
-              const active = pathname?.startsWith(l.href)
-              return (
-                <Link
-                  key={`${l.href}-${i}`}
-                  href={l.href}
-                  role="menuitem"
-                  onClick={() => setDrawerOpen(false)}
-                  className={`flex min-h-touch shrink-0 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors
-                    ${active ? 'bg-navy-50 text-navy-800' : 'text-gray-700 hover:bg-gray-100'}`}
-                >
-                  <l.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                  {l.label}
-                </Link>
-              )
-            })}
+          <nav className="hidden md:flex items-center gap-1">
+            {EMPLOYER_NAV_ITEMS.map((l, i) => (
+              <Link key={`${l.href}-${i}`} href={l.href}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                  ${pathname?.startsWith(l.href) ? 'bg-navy-50 text-navy-800' : 'text-gray-600 hover:bg-gray-100'}`}>
+                {l.label}
+              </Link>
+            ))}
           </nav>
 
-          <div className="shrink-0 border-t border-gray-100 p-3">
-            <button
-              type="button"
-              onClick={() => { setDrawerOpen(false); logout() }}
-              role="menuitem"
-              className="flex min-h-touch w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-red-600 hover:bg-red-50"
-            >
-              <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
-              ออกจากระบบ
-            </button>
+          <div className="hidden items-center gap-3 md:flex">
+            <span className="max-w-[10rem] truncate text-sm text-gray-500">{companyName}</span>
+            <button onClick={logout} className="min-h-touch rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100">ออก</button>
           </div>
+
+          <MobileNavTrigger open={drawerOpen} onClick={() => setDrawerOpen(true)} />
         </div>
-      </div>
-    )}
+      </header>
+
+      <MobileNavDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        items={EMPLOYER_NAV_ITEMS}
+        subtitle={companyName || null}
+        onLogout={logout}
+        ariaLabel="เมนูนายจ้าง"
+      />
     </>
   )
 }
@@ -296,27 +141,50 @@ const ADMIN_LINKS = [
   { href: '/admin/companies', label: 'Companies' },
 ]
 
+// Same shared list, now also feeding the mobile drawer (previously
+// AdminNavbar had no mobile nav at all — the nav row had no `hidden
+// md:flex`, so on a narrow viewport it just overflowed horizontally).
+const ADMIN_NAV_ITEMS = [
+  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/users',     label: 'Users',      icon: Users },
+  { href: '/admin/jobs',      label: 'Jobs',       icon: Briefcase },
+  { href: '/admin/companies', label: 'Companies',  icon: Building2 },
+]
+
 export function AdminNavbar() {
   const pathname = usePathname()
   const { logout } = useAuth()
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <Logo variant="icon" href="/" className="gap-2">
-          <span className="text-base font-bold text-gray-900">Admin Panel</span>
-        </Logo>
-        <nav className="flex items-center gap-1">
-          {ADMIN_LINKS.map(l => (
-            <Link key={l.href} href={l.href}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                ${pathname?.startsWith(l.href) ? 'bg-orange-50 text-orange-700' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-        <button onClick={logout} className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100">ออก</button>
-      </div>
-    </header>
+    <>
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur" style={HEADER_SAFE_TOP}>
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+          <Logo variant="icon" href="/" className="min-w-0 shrink-0 gap-2">
+            <span className="truncate text-base font-bold text-gray-900">Admin Panel</span>
+          </Logo>
+          <nav className="hidden md:flex items-center gap-1">
+            {ADMIN_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                  ${pathname?.startsWith(l.href) ? 'bg-orange-50 text-orange-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+          <button onClick={logout} className="hidden min-h-touch rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 md:block">ออก</button>
+          <MobileNavTrigger open={drawerOpen} onClick={() => setDrawerOpen(true)} />
+        </div>
+      </header>
+
+      <MobileNavDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        items={ADMIN_NAV_ITEMS}
+        subtitle="Admin Panel"
+        onLogout={logout}
+        ariaLabel="เมนูผู้ดูแลระบบ"
+      />
+    </>
   )
 }

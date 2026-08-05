@@ -62,8 +62,8 @@ export default function AdminJobsPage() {
       {!isLoading && jobs.length === 0 && <EmptyState icon={<Search className="h-12 w-12" />} title="ไม่พบประกาศงาน" />}
 
       {!isLoading && jobs.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+          <table className="w-full min-w-[560px] text-sm">
             <thead className="border-b border-gray-100 bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">ตำแหน่งงาน</th>

@@ -54,16 +54,10 @@ export function ApplyChoiceModal({
     const mailtoUrl = `mailto:${companyEmail}?subject=${encodedSubject}&body=${encodedBody}`
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(companyEmail)}&su=${encodedSubject}&body=${encodedBody}`
 
-    // Open Gmail from this user-initiated click. Do not use `noopener` as a
-    // window feature: browsers intentionally return `null` for that option,
-    // which made the old code also trigger the mailto fallback even after
-    // Gmail had opened. That could take the applicant away from the site or
-    // make the application appear to fail.
+    // Prefer Gmail compose (always reachable from a browser); if the popup
+    // is blocked or fails to open, fall back to the system default mailto:.
     let gmailWindow: Window | null = null
-    try {
-      gmailWindow = window.open(gmailUrl, '_blank')
-      if (gmailWindow) gmailWindow.opener = null
-    } catch { gmailWindow = null }
+    try { gmailWindow = window.open(gmailUrl, '_blank', 'noopener,noreferrer') } catch { gmailWindow = null }
 
     if (!gmailWindow) {
       window.location.href = mailtoUrl
@@ -75,7 +69,7 @@ export function ApplyChoiceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
       <div
-        className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+        className="relative max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         <button
