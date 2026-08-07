@@ -45,9 +45,16 @@ export const refresh = async (req: Request, res: Response) => {
   try {
     const token = req.cookies?.refreshToken
     if (!token) { res.status(401).json({ message: 'No refresh token' }); return }
-    const { accessToken } = await svc.refresh(token)
-    res.status(200).json({ accessToken })
-  } catch { res.status(401).json({ message: 'Invalid refresh token' }) }
+    const { user, accessToken } = await svc.refresh(token)
+    res.status(200).json({ user, accessToken })
+  } catch (e) {
+    // Previously this swallowed the real error entirely — meaning any
+    // cause (expired token, DB/schema mismatch, etc.) was invisible in
+    // server logs, making this exact class of "why is refresh failing"
+    // bug undiagnosable in production. Log it, still respond 401.
+    console.error('[auth.refresh] failed:', (e as Error).message)
+    res.status(401).json({ message: 'Invalid refresh token' })
+  }
 }
 
 export const me = async (req: AuthRequest, res: Response) => {

@@ -140,9 +140,12 @@ export const login = async (email: string, password: string) => {
 
 export const refresh = async (token: string) => {
   const payload = verifyRefreshToken(token)
-  const user    = await prisma.user.findUnique({ where: { id: payload.userId } })
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    include: { jobSeeker: true, employer: { include: { company: true } } },
+  })
   if (!user || !user.isActive || user.accountStatus !== 'ACTIVE') throw new Error('User not found')
-  return { accessToken: signAccessToken({ userId: user.id, role: user.role as any }) }
+  return { user: sanitize(user), accessToken: signAccessToken({ userId: user.id, role: user.role as any }) }
 }
 
 export const getMe = async (userId: string) => {

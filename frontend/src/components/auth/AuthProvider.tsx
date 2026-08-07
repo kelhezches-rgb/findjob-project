@@ -19,10 +19,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const restore = async () => {
       try {
-        const { data: r } = await api.post<{ accessToken: string }>('/auth/refresh')
-        useAuthStore.getState().setAccessToken(r.accessToken)
-        const { data: m } = await api.get<{ user: User }>('/auth/me')
-        setAuth(m.user, r.accessToken)
+        const { data } = await api.post<{ user: User; accessToken: string }>('/auth/refresh')
+        setAuth(data.user, data.accessToken)
       } catch (e: any) {
         // Only a confirmed response (401/403 — refresh token explicitly
         // rejected) means the session is actually invalid. A network-level

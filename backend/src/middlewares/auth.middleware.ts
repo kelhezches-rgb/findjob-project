@@ -25,7 +25,8 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
     req.user = payload
     next()
-  } catch {
+  } catch (e) {
+    console.error('[auth.middleware] token/DB check failed:', (e as Error).message)
     res.status(401).json({ message: 'Invalid or expired token' })
   }
 }

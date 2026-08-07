@@ -26,11 +26,18 @@ app.use(helmet({
 }))
 
 // ── CORS ─────────────────────────────────────────────────────
+// Hardcoded defaults for known environments, PLUS whatever's configured
+// via env vars — so a production frontend URL that doesn't exactly match
+// what's hardcoded here (a new Vercel domain, a custom domain, a preview
+// deployment) doesn't silently break every cookie-based request
+// (including /auth/refresh) with no way to fix it short of a redeploy.
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://jobboard-th.vercel.app",
-]
+  process.env.CLIENT_URL,
+  ...(process.env.CORS_ORIGINS?.split(',').map(o => o.trim()) || []),
+].filter((o): o is string => Boolean(o))
 
 app.use(
   cors({
@@ -38,6 +45,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true)
       } else {
+        console.error(`[CORS] rejected origin: ${origin}`)
         callback(new Error(`Not allowed by CORS: ${origin}`))
       }
     },
