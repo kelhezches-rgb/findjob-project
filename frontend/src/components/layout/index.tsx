@@ -76,16 +76,40 @@ export function SeekerNavbar() {
 
 // Single source of truth for employer navigation — both the desktop bar
 // and the mobile drawer render from this exact list, so they can't drift.
-// Note: this app has no dedicated cross-job "Applications" page (applicants
-// are only viewable per-job) and no dedicated "Account Settings" page —
-// both point at their closest existing equivalent until those are built.
+// Each item's `match` explicitly decides when it's active — a plain
+// startsWith can't tell /employer/jobs, /employer/jobs/create, and
+// /employer/jobs/[id]/applicants apart since they share a path prefix.
+// Note: this app has no dedicated "Account Settings" page — it points at
+// its closest existing equivalent until one is built.
 const EMPLOYER_NAV_ITEMS = [
-  { href: '/employer/dashboard',   label: 'Dashboard',      icon: LayoutDashboard },
-  { href: '/employer/company',     label: 'บริษัท',          icon: Building2 },
-  { href: '/employer/jobs/create', label: 'ลงประกาศงาน',     icon: PlusCircle },
-  { href: '/employer/jobs',        label: 'ประกาศงาน',       icon: Briefcase },
-  { href: '/employer/jobs',        label: 'ใบสมัครงาน',      icon: Users },
-  { href: '/employer/settings',    label: 'ตั้งค่าบัญชี',     icon: Settings },
+  {
+    href: '/employer/dashboard', label: 'Dashboard', icon: LayoutDashboard,
+    match: (p: string) => p.startsWith('/employer/dashboard'),
+  },
+  {
+    href: '/employer/company', label: 'บริษัท', icon: Building2,
+    match: (p: string) => p.startsWith('/employer/company'),
+  },
+  {
+    href: '/employer/jobs/create', label: 'ลงประกาศงาน', icon: PlusCircle,
+    match: (p: string) => p === '/employer/jobs/create',
+  },
+  {
+    // Matches the jobs list itself and the edit page
+    // (/employer/jobs/[id]/edit) — but not /create or /applicants.
+    href: '/employer/jobs', label: 'ประกาศงาน', icon: Briefcase,
+    match: (p: string) => p === '/employer/jobs' || /^\/employer\/jobs\/[^/]+\/edit$/.test(p),
+  },
+  {
+    // Matches the dedicated applications page and any per-job applicants
+    // route (list or detail) — never the same paths "ประกาศงาน" matches.
+    href: '/employer/applications', label: 'ใบสมัครงาน', icon: Users,
+    match: (p: string) => p.startsWith('/employer/applications') || /^\/employer\/jobs\/[^/]+\/applicants/.test(p),
+  },
+  {
+    href: '/employer/settings', label: 'ตั้งค่าบัญชี', icon: Settings,
+    match: (p: string) => p.startsWith('/employer/settings'),
+  },
 ]
 
 export function EmployerNavbar() {
@@ -107,7 +131,7 @@ export function EmployerNavbar() {
             {EMPLOYER_NAV_ITEMS.map((l, i) => (
               <Link key={`${l.href}-${i}`} href={l.href}
                 className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                  ${pathname?.startsWith(l.href) ? 'bg-navy-50 text-navy-800' : 'text-gray-600 hover:bg-gray-100'}`}>
+                  ${l.match(pathname || '') ? 'bg-navy-50 text-navy-800' : 'text-gray-600 hover:bg-gray-100'}`}>
                 {l.label}
               </Link>
             ))}

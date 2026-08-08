@@ -181,6 +181,51 @@ export const listApplicants = async (userId: string, jobId: string, params: {
   return { applications, pagination: paginationMeta(total, params.page, params.limit) }
 }
 
+// Company-wide applications list (all jobs), for the /employer/applications
+// page — as opposed to listApplicants above, which is scoped to one job.
+// Same authorization boundary: companyId always comes from the
+// authenticated employer via getEmployer(), never from the request.
+export const listAllApplications = async (userId: string, params: {
+  page: number; limit: number; status?: string; jobId?: string; sort?: 'latest' | 'oldest'
+}) => {
+  const emp = await getEmployer(userId)
+
+  // If a specific job is requested, verify it actually belongs to this
+  // employer's company — same as listApplicants — rather than trusting an
+  // arbitrary jobId to silently return nothing (or worse, leak intent).
+  if (params.jobId) {
+    const job = await prisma.job.findFirst({ where: { id: params.jobId, companyId: emp.companyId } })
+    if (!job) throw new Error('Job not found')
+  }
+
+  const where = {
+    job: { companyId: emp.companyId },
+    ...(params.jobId && { jobId: params.jobId }),
+    ...(params.status && { status: params.status as any }),
+  }
+
+  const [applications, total] = await Promise.all([
+    prisma.application.findMany({
+      where,
+      orderBy: { appliedAt: params.sort === 'oldest' ? 'asc' : 'desc' },
+      ...paginate(params.page, params.limit),
+      select: {
+        id: true, status: true, appliedAt: true,
+        job: { select: { id: true, title: true } },
+        jobSeeker: {
+          select: {
+            firstName: true, lastName: true, phone: true, avatarUrl: true,
+            user: { select: { email: true } },
+          },
+        },
+        resume: { select: { id: true, title: true, cvFileUrl: true, cvFileName: true } },
+      },
+    }),
+    prisma.application.count({ where }),
+  ])
+  return { applications, pagination: paginationMeta(total, params.page, params.limit) }
+}
+
 // Shared authorization core for both resume-detail and CV-file access below.
 // Scoped through the APPLICATION id (which the employer already only ever
 // sees for applications on their own jobs, via listApplicants above) —

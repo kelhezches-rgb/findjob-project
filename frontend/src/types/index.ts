@@ -104,6 +104,18 @@ export interface ApplicantDetail {
   > | null
 }
 
+// GET /employer/applications — cross-job list, one row per application,
+// includes which job it's for (unlike Applicant above, which is scoped to
+// a single job's applicants list and doesn't need to repeat the job).
+export interface ApplicationListItem {
+  id: string; status: ApplyStatus; appliedAt: string
+  job: { id: string; title: string }
+  jobSeeker: Pick<JobSeekerProfile, 'firstName' | 'lastName' | 'phone' | 'avatarUrl'> & {
+    user: { email: string }
+  }
+  resume?: (Pick<Resume, 'id' | 'title'> & { cvFileUrl?: string | null; cvFileName?: string | null }) | null
+}
+
 export interface SavedJob {
   id: string; savedAt: string
   job: Pick<Job, 'id' | 'title' | 'jobType' | 'status'> & {

@@ -9,6 +9,10 @@ export interface MobileNavItem {
   href: string
   label: string
   icon: ComponentType<{ className?: string }>
+  /** Optional custom active-match — defaults to pathname.startsWith(href).
+   *  Needed when routes sharing a prefix (e.g. /employer/jobs and
+   *  /employer/jobs/create) must highlight different nav items. */
+  match?: (pathname: string) => boolean
 }
 
 interface MobileNavDrawerProps {
@@ -86,7 +90,7 @@ export function MobileNavDrawer({ open, onClose, items, subtitle, onLogout, aria
 
         <nav className="flex flex-1 flex-col gap-1 p-3">
           {items.map((item, i) => {
-            const active = pathname?.startsWith(item.href)
+            const active = item.match ? item.match(pathname || '') : pathname?.startsWith(item.href)
             return (
               <Link
                 key={`${item.href}-${i}`}

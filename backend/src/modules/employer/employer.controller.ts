@@ -55,6 +55,16 @@ export const listApplicants = async (req: AuthRequest, res: Response) => {
     ok(res, await svc.listApplicants(req.user!.userId, req.params.id, { page, limit, status }))
   } catch (e) { err(res, e) }
 }
+export const listAllApplications = async (req: AuthRequest, res: Response) => {
+  try {
+    const page   = Number(req.query.page   || 1)
+    const limit  = Number(req.query.limit  || 20)
+    const status = req.query.status as string | undefined
+    const jobId  = req.query.jobId as string | undefined
+    const sort   = req.query.sort as 'latest' | 'oldest' | undefined
+    ok(res, await svc.listAllApplications(req.user!.userId, { page, limit, status, jobId, sort }))
+  } catch (e) { err(res, e) }
+}
 export const updateAppStatus = async (req: AuthRequest, res: Response) => {
   try {
     ok(res, { application: await svc.updateApplicationStatus(req.user!.userId, req.params.id, req.body) })

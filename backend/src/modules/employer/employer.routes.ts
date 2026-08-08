@@ -24,6 +24,7 @@ router.put('/jobs/:id',     validate(updateJobSchema), ctrl.updateJob)
 router.patch('/jobs/:id/status', validate(jobStatusSchema), ctrl.setStatus)
 router.delete('/jobs/:id',  ctrl.deleteJob)
 
+router.get('/applications',              ctrl.listAllApplications)
 router.get('/jobs/:id/applicants',       ctrl.listApplicants)
 router.patch('/applications/:id/status', validate(applicationStatusSchema), ctrl.updateAppStatus)
 router.get('/applications/:id',          ctrl.getApplicantDetail)
